@@ -16,7 +16,7 @@ import org.apache.lucene.document.Field.{Index, Store}
 import org.apache.lucene.document.{Document, Field}
 import org.apache.lucene.index._
 import org.apache.lucene.queryparser.classic.QueryParser
-import org.apache.lucene.search.IndexSearcher
+import org.apache.lucene.search.{SearcherFactory, SearcherManager, IndexSearcher}
 import org.apache.lucene.util.BytesRef
 import org.apache.solr.store.hdfs.HdfsDirectory
 import org.slf4j.LoggerFactory
@@ -64,11 +64,13 @@ object IndexSource {
 }
 
 class RegionIndexer(env:RegionCoprocessorEnvironment){
+  def flush(): Unit = writer.commit()
+
 
   private val logger = LoggerFactory getLogger getClass
 
   private val region = env.getRegion
-  private val (writer,searcher)= initIndex()
+  private val (writer,searcherManager)= initIndex()
 
 
   private def initIndex()= {
@@ -91,9 +93,9 @@ class RegionIndexer(env:RegionCoprocessorEnvironment){
     config.setMergePolicy(mergePolicy);
     config.setMergeScheduler(new SerialMergeScheduler());
     val writer = new IndexWriter(directory,config)
-    val reader = DirectoryReader.open(writer,true)
-    val searcher = new IndexSearcher(reader)
-    (writer,searcher)
+
+    val searcherManager = new SearcherManager(writer,new SearcherFactory())
+    (writer,searcherManager)
   }
   def index(familyMap:Map[Array[Byte], List[Cell]]): Unit ={
     val rowTerm = IndexSource.getRowTerm(familyMap)
@@ -106,19 +108,24 @@ class RegionIndexer(env:RegionCoprocessorEnvironment){
         writer.addDocument(doc);
       }
     }
+    searcherManager.maybeRefresh()
   }
   def search(q:String,offset:Int=0,limit:Int=30): scala.List[Document]={
-    val parser = new QueryParser("id",IndexSource.defaultAnalyzer)
-    val query = parser.parse(q)
-    val docs = searcher.search(query,offset+limit)
-    if(docs.scoreDocs.length > offset) {
-      docs.scoreDocs.drop(offset).map{scoreDoc =>
-        doc(scoreDoc.doc)
-      }.toList
-    } else Nil
-  }
-  def doc(docID:Int):Document={
-    convert(searcher.doc(docID));
+    var searcher: IndexSearcher = null
+    try {
+      searcher = searcherManager.acquire()
+      println("max doc:"+searcher.getIndexReader.maxDoc())
+      val parser = new QueryParser("id",IndexSource.defaultAnalyzer)
+      val query = parser.parse(q)
+      val docs = searcher.search(query,offset+limit)
+      if(docs.scoreDocs.length > offset) {
+        docs.scoreDocs.drop(offset).map{scoreDoc =>
+          convert(searcher.doc(scoreDoc.doc))
+        }.toList
+      } else Nil
+    }finally {
+      searcherManager.release(searcher)
+    }
   }
 
   private def convert(d:Document):Document= {
@@ -136,7 +143,7 @@ class RegionIndexer(env:RegionCoprocessorEnvironment){
       val cell = result.get(i)
         val keyStr2 = Bytes.toString(cell.getQualifierArray);
         val valStr2 = Bytes.toString(cell.getValueArray);
-        System.out.println("keyStr:"+""+" keyStr2:"+keyStr2+" valStr2:"+valStr2);
+//        System.out.println("keyStr:"+""+" keyStr2:"+keyStr2+" valStr2:"+valStr2);
         val field = new Field(keyStr2, valStr2, Store.YES, Index.ANALYZED);
         doc.add(field);
     }
@@ -148,7 +155,7 @@ class RegionIndexer(env:RegionCoprocessorEnvironment){
   }
 
   def close(): Unit = {
-    searcher.getIndexReader.decRef()
+    searcherManager.close()
     IOUtils.closeQuietly(writer)
   }
 }
@@ -186,20 +193,21 @@ class DefaultDocumentTransformer {
       val value = entry.getValue
       val family = Bytes.toString(key);
       // if (!family.equals("info")) {
-      System.out.println("family:" + family);
+//      System.out.println("family:" + family);
       val valueIt = value.iterator()
       while(valueIt.hasNext){
         val kv = valueIt.next()
-        System.out.println("key:"+Bytes.toString(kv.getQualifierArray()))
+//        System.out.println("key:"+Bytes.toString(kv.getQualifierArray()))
         if (row == null) {
           row = kv.getRow();
           val rowStr = Bytes.toString(row);
-          System.out.println("rowstr:" + rowStr);
+//          System.out.println("rowstr:" + rowStr);
           timestamp = kv.getTimestamp();
         }
         val name = Bytes.toString(kv.getQualifier());
         // String name = kv.getKeyString();
         val value = new String(kv.getValue());
+//        System.out.println("name:"+name+" value:"+value)
         val field = new Field(name, value, Store.NO, Index.ANALYZED);
         doc.add(field);
         added = true;

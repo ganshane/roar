@@ -8,7 +8,8 @@ import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.coprocessor.CoprocessorHost
 import org.apache.hadoop.hbase.regionserver.HRegion
 import org.apache.hadoop.hbase.util.Bytes
-import org.junit.{After, Before, Test}
+import org.junit.{Assert, After, Before, Test}
+import roar.protocol.generated.RoarProtos.{SearchRequest, IndexSearchService}
 
 /**
   * first hbase test case
@@ -82,6 +83,14 @@ class IndexRegionObserverTest{
     p.addColumn(test, dummy, dummy)
     // before HBASE-4331, this would throw an exception
     t.put(p)
+
+    val channel = t.coprocessorService(row1)
+    val service = IndexSearchService.newBlockingStub(channel)
+    val request = SearchRequest.newBuilder()
+    request.setQ("dummy:dummy")
+    val response = service.query(null,request.build())
+    Assert.assertEquals(1,response.getCount)
+
     checkRowAndDelete(t, row1, 1)
     p = new Put(row1)
     p.addColumn(test, dummy, dummy)

@@ -22,6 +22,7 @@ class IndexRegionObserver extends BaseRegionObserver{
 
 
   override def postFlush(e: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
+    IndexSource.findIndex(e.getEnvironment.getRegionInfo.getRegionId).flush()
   }
 
   override def postCompact(e: ObserverContext[RegionCoprocessorEnvironment], store: Store, resultFile: StoreFile, request: CompactionRequest): Unit = {
