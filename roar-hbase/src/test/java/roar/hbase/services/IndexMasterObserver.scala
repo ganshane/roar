@@ -1,5 +1,6 @@
 package roar.hbase.services
 
+import org.apache.hadoop.hbase.{HRegionInfo, HTableDescriptor}
 import org.apache.hadoop.hbase.coprocessor.{MasterCoprocessorEnvironment, ObserverContext, BaseMasterObserver}
 
 /**
@@ -9,6 +10,13 @@ import org.apache.hadoop.hbase.coprocessor.{MasterCoprocessorEnvironment, Observ
   * @since 2016-07-04
   */
 class IndexMasterObserver extends BaseMasterObserver{
+
+  override def preCreateTable(ctx: ObserverContext[MasterCoprocessorEnvironment], desc: HTableDescriptor, regions: Array[HRegionInfo]): Unit =
+    super.preCreateTable(ctx, desc, regions)
+
+
+  override def preCreateTableHandler(ctx: ObserverContext[MasterCoprocessorEnvironment], desc: HTableDescriptor, regions: Array[HRegionInfo]): Unit = super.preCreateTableHandler(ctx, desc, regions)
+
   override def preMasterInitialization(ctx: ObserverContext[MasterCoprocessorEnvironment]): Unit = {
     super.preMasterInitialization(ctx)
   }

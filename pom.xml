@@ -14,6 +14,7 @@
   <modules>
     <module>roar-api</module>
     <module>roar-hbase</module>
+    <module>roar-protocol</module>
   </modules>
   <scm>
     <url>https://github.com/ganshane/roar</url>
@@ -26,6 +27,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>roar-api_${scala-binary-version}</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>roar-protocol</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -71,6 +77,12 @@
         <groupId>org.apache.solr</groupId>
         <artifactId>solr-core</artifactId>
         <version>5.5.2</version>
+      </dependency>
+      <!-- protobuf -->
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>2.5.0</version>
       </dependency>
 
 

@@ -14,10 +14,15 @@
   <packaging>jar</packaging>
   <name>Roar Hbase Extension</name>
   <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>roar-protocol</artifactId>
+    </dependency>
     <!-- hbase -->
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-server</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hbase</groupId>
