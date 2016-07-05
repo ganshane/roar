@@ -1,0 +1,4 @@
+language: java
+before_script:
+  - export VERSION=`cat pom.xml|grep -e '<version>\(.*\)</version>'|head -n 1|sed  's/^.*<version>\(.*\)<\/version>/\1/g'`
+  - echo $VERSION

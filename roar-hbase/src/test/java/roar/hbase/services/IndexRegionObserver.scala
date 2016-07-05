@@ -2,7 +2,6 @@ package roar.hbase.services
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.{Durability, Put}
 import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, ObserverContext, RegionCoprocessorEnvironment}
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
@@ -22,20 +21,18 @@ import org.slf4j.LoggerFactory
 class IndexRegionObserver extends BaseRegionObserver{
   private val logger = LoggerFactory getLogger getClass
   private var indexWriter:IndexWriter = _
-  private val pathFormat="/INDEX/%s/%s"
+  private val pathFormat="INDEX/%s"
 
   override def postOpen(e: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
-    val tableName = e.getEnvironment.getRegion.getTableDesc.getTableName.getNameAsString
-    val fs = e.getEnvironment.getRegionServerServices.getFileSystem
+    val tableName = e.getEnvironment.getRegion.getTableDesc.getTableName
     val encodedName = e.getEnvironment.getRegionInfo.getEncodedName
-    val regionIndexPath = pathFormat.format(tableName,encodedName)
+    val regionIndexPath = pathFormat.format(encodedName)
 
     val rootDir = FSUtils.getRootDir(e.getEnvironment.getConfiguration)
-    val tableDir = FSUtils.getTableDir(rootDir,TableName.valueOf(tableName))
+    val tableDir = FSUtils.getTableDir(rootDir,tableName)
 
     val conf=new Configuration()
-    val indexPath = new Path(rootDir,regionIndexPath)
-    fs.mkdirs(indexPath)
+    val indexPath = new Path(tableDir,regionIndexPath)
     logger.info("create index with path {}",indexPath)
 
     val directory = new HdfsDirectory(indexPath,HdfsLockFactoryInHbase,conf)
