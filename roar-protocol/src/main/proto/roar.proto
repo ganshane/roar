@@ -1,0 +1,20 @@
+option java_package = "roar.protocol.generated";
+ 
+option java_outer_classname = "RoarProtos";
+option java_generic_services = true;
+option optimize_for = SPEED;
+ 
+message SearchRequest {
+  optional string table_name = 1;
+  optional string q = 2;
+  optional int32 offset = 4 [default = 0];
+  optional int32 limit = 3 [default = 30];
+}
+message SearchResponse {
+ required int32 count = 1;
+ required int32 total = 2;
+}
+service IndexSearchService{
+ rpc query(SearchRequest)
+ returns(SearchResponse);
+}

@@ -19,8 +19,6 @@ class IndexRegionObserver extends BaseRegionObserver{
     IndexSource.createIndex(e.getEnvironment)
   }
 
-
-
   override def postFlush(e: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
     IndexSource.findIndex(e.getEnvironment.getRegionInfo.getRegionId).flush()
   }
