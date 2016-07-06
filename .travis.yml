@@ -1,4 +1,17 @@
+sudo: false
+cache:
+  directories:
+  - $HOME/.m2/repository
+  - $HOME/protobuf
+before_cache:
+- rm -rf $HOME/.m2/repository/com/ganshane/stark
+- find $HOME/.m2 -name "resolver-status.properties" | xargs rm
 language: java
 before_script:
   - export VERSION=`cat pom.xml|grep -e '<version>\(.*\)</version>'|head -n 1|sed  's/^.*<version>\(.*\)<\/version>/\1/g'`
   - echo $VERSION
+before_install:
+- bash support/scripts/install-protobuf.sh
+- export PATH=$PATH:$HOME/protobuf/bin
+jdk:
+- oraclejdk7
