@@ -72,6 +72,12 @@
         <version>1.1.5</version>
         <scope>test</scope>
       </dependency>
+      <!-- stark -->
+      <dependency>
+        <groupId>com.ganshane.stark</groupId>
+        <artifactId>stark-utils_2.11</artifactId>
+        <version>0.1.10</version>
+      </dependency>
       <!-- solr -->
       <dependency>
         <groupId>org.apache.solr</groupId>
