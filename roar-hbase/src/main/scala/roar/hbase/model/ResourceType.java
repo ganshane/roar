@@ -1,0 +1,11 @@
+// Copyright 2013,2015,2016 the original author or authors. All rights reserved.
+// site: http://www.ganshane.com
+package roar.hbase.model;
+
+/**
+ * 定义资源类型
+ * @author jcai
+ */
+public enum ResourceType {
+    Real,Virtual,Data
+}

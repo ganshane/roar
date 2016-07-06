@@ -1,0 +1,14 @@
+// Copyright 2013,2015,2016 the original author or authors. All rights reserved.
+// site: http://www.ganshane.com
+package roar.hbase.model;
+
+/**
+ * 同步策略
+ * @author jcai
+ */
+public enum SyncPolicy {
+    /** 增量同步策略 **/
+    Incremental,
+    /** 全库同步策略 **/
+    Full
+}

@@ -8,8 +8,8 @@ import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.coprocessor.CoprocessorHost
 import org.apache.hadoop.hbase.regionserver.HRegion
 import org.apache.hadoop.hbase.util.Bytes
-import org.junit.{Assert, After, Before, Test}
-import roar.protocol.generated.RoarProtos.{SearchRequest, IndexSearchService}
+import org.junit.{After, Assert, Before, Test}
+import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest}
 
 /**
   * first hbase test case
@@ -38,7 +38,6 @@ class IndexRegionObserverTest{
     val hdfsCluster = builder.build()
     val hdfsURI = "hdfs://localhost:"+ hdfsCluster.getNameNodePort() + "/"
     */
-
 
     val conf = HBaseConfiguration.create()
     conf.setStrings(CoprocessorHost.USER_REGION_COPROCESSOR_CONF_KEY,

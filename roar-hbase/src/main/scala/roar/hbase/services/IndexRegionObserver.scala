@@ -51,6 +51,7 @@ class IndexRegionObserver extends BaseRegionObserver
     mybeRefresh()
   }
 
+
   override def postSplit(e: ObserverContext[RegionCoprocessorEnvironment], l: Region, r: Region): Unit = {
   }
 }
