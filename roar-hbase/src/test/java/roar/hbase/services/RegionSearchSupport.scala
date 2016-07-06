@@ -11,7 +11,7 @@ import roar.hbase.RoarHbaseConstants
 import stark.utils.services.LoggerSupport
 
 /**
-  *
+  * region search support
   * @author <a href="mailto:jcai@ganshane.com">Jun Tsai</a>
   * @since 2016-07-06
   */
