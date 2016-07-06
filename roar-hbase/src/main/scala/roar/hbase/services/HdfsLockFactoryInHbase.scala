@@ -3,7 +3,7 @@ package roar.hbase.services
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.lucene.store.{Directory, Lock, LockFactory, LockReleaseFailedException}
-import org.apache.solr.store.hdfs.{HdfsLockFactory, HdfsDirectory}
+import org.apache.solr.store.hdfs.{HdfsDirectory, HdfsLockFactory}
 
 /**
   *

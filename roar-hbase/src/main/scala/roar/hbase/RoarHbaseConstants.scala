@@ -15,4 +15,6 @@ object RoarHbaseConstants {
   final val defaultAnalyzer = new CJKAnalyzer
 
   final val DEFAULT_TRANSFER=new DefaultDocumentTransformer
+  final val ENABLE_ROAR_INDEX_CONF_KEY="roar.index.enabled"
+
 }

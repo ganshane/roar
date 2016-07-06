@@ -1,7 +1,7 @@
 package roar.hbase.services
 
+import org.apache.hadoop.hbase.coprocessor.{BaseMasterObserver, MasterCoprocessorEnvironment, ObserverContext}
 import org.apache.hadoop.hbase.{HRegionInfo, HTableDescriptor}
-import org.apache.hadoop.hbase.coprocessor.{MasterCoprocessorEnvironment, ObserverContext, BaseMasterObserver}
 
 /**
   * index master observer
