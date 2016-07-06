@@ -2,6 +2,7 @@ package roar.hbase.services
 
 import org.apache.hadoop.hbase.client.Get
 import org.apache.hadoop.hbase.util.Bytes
+import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.document.{Document, StringField}
 import org.apache.lucene.queryparser.classic.QueryParser
@@ -65,5 +66,8 @@ trait RegionSearchSupport {
     }
     doc.add(rowField)
     doc
+  }
+  protected def closeSearcher(): Unit ={
+    IOUtils.closeStream(searcherManager)
   }
 }

@@ -8,7 +8,7 @@ import org.apache.hadoop.hbase.regionserver.{Region, Store, StoreFile}
 import stark.utils.services.LoggerSupport
 
 /**
-  *
+  * index region observer
   * @author <a href="mailto:jcai@ganshane.com">Jun Tsai</a>
   * @since 2016-07-03
   */
@@ -30,7 +30,7 @@ class IndexRegionObserver extends BaseRegionObserver
   }
 
   override def postFlush(e: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
-//    IndexSource.findIndex(e.getEnvironment.getRegionInfo.getRegionId).flush()
+    flushIndex()
   }
 
   override def postCompact(e: ObserverContext[RegionCoprocessorEnvironment], store: Store, resultFile: StoreFile, request: CompactionRequest): Unit = {
@@ -38,6 +38,8 @@ class IndexRegionObserver extends BaseRegionObserver
 
   override def postClose(e: ObserverContext[RegionCoprocessorEnvironment], abortRequested: Boolean): Unit = {
     logger.info("closing index writer...")
+    closeSearcher()
+    closeIndex()
 //    IndexSource.findIndex(e.getEnvironment.getRegionInfo.getRegionId).close()
   }
   override def postPut(e: ObserverContext[RegionCoprocessorEnvironment], put: Put, edit: WALEdit, durability: Durability): Unit = {

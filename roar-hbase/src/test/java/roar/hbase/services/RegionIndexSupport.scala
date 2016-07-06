@@ -7,6 +7,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase.Cell
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.util.{Bytes, FSUtils}
+import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.document._
 import org.apache.lucene.index._
@@ -54,31 +55,15 @@ trait RegionIndexSupport {
       indexWriter.updateDocument(rowTerm, doc)
     }
   }
+  protected def flushIndex(): Unit ={
+    //提交索引到磁盘
+    indexWriter.commit()
+  }
+  protected def closeIndex():Unit={
+    IOUtils.closeStream(indexWriter)
+  }
 }
 class DefaultDocumentTransformer {
-  /*
-  @Override
-  def transform(row:BytesRef,kvs:List[KeyValue]):Document={
-    var row:Array[Byte] = null
-    var timestamp:Long = -1
-    val doc = new Document()
-    val it =kvs.iterator()
-    while(it.hasNext){
-      val kv = it.next()
-      if (row == null) {
-        row = kv.getRow()
-        timestamp = kv.getTimestamp()
-      }
-      val name = Bytes.toString(kv.getQualifier())
-      val value = new String(kv.getValue())
-      val field = new Field(name, value, Store.NO, Index.ANALYZED)
-      doc.add(field)
-    }
-//    addFields(row, timestamp, doc)
-    return doc
-  }
-  */
-
   def transform(row:BytesRef,familyMap:Map[Array[Byte], List[Cell]]):Document={
     var timestamp:Long = -1
     val doc = new Document()
@@ -103,7 +88,8 @@ class DefaultDocumentTransformer {
       return null
     }
     addFields(row, timestamp, doc)
-    return doc
+
+    doc
   }
 
   private def addFields(row:BytesRef, timestamp:Long, doc:Document) {
