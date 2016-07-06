@@ -16,5 +16,7 @@ object RoarHbaseConstants {
 
   final val DEFAULT_TRANSFER=new DefaultDocumentTransformer
   final val ENABLE_ROAR_INDEX_CONF_KEY="roar.index.enabled"
+  final val RESOURCES_PATH="/roar/resources"
+  final val RESOURCE_PATH_FORMAT=RESOURCES_PATH+"/%s"
 
 }

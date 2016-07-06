@@ -130,7 +130,18 @@
         <artifactId>h2</artifactId>
         <version>1.3.176</version>
       </dependency>
-
+      <!-- tapestry ioc -->
+      <dependency>
+        <groupId>org.apache.tapestry</groupId>
+        <artifactId>tapestry-ioc</artifactId>
+        <version>${tapestry-release-version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
       <!-- jetty@eclipse -->
       <dependency>
         <groupId>org.eclipse.jetty</groupId>
