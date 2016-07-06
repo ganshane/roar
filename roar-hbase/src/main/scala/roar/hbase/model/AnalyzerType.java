@@ -12,9 +12,8 @@ package roar.hbase.model;
  */
 public enum AnalyzerType {
     Standard,
-    MMSeg,
-    Smart,
-    Name;
+    SmartCN,
+    CJK;
 
     public Class clazz() {
         try {
@@ -22,11 +21,9 @@ public enum AnalyzerType {
                 case 0:
                     return Class.forName("org.apache.lucene.analysis.standard.StandardAnalyzer");
                 case 1:
-                    return Class.forName("monad.mmseg.analysis.MMSegAnalyzer");
-                case 2:
                     return Class.forName("org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer");
-                case 3:
-                    return Class.forName("monad.mmseg.analysis.NameAnalyzer");
+                case 2:
+                    return Class.forName("org.apache.lucene.analysis.cjk.CJKAnalyzer");
                 default:
                     throw new IllegalStateException("Wrong class");
             }
