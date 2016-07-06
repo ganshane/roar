@@ -43,6 +43,8 @@ class IndexRegionObserverTest{
     val conf = HBaseConfiguration.create()
     conf.setStrings(CoprocessorHost.USER_REGION_COPROCESSOR_CONF_KEY,
       classOf[IndexRegionObserver].getName)
+    conf.setStrings(CoprocessorHost.REGIONSERVER_COPROCESSOR_CONF_KEY,
+      classOf[ResourceWatchRegionServerObserver].getName)
 //    conf.setStrings(RoarHbaseConstants.ROAR_INDEX_HDFS_CONF_KEY,hdfsURI)
 
     util = new HBaseTestingUtility(conf)

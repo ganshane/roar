@@ -26,6 +26,8 @@ trait RegionIndexSupport {
   this:RegionCoprocessorEnvironmentSupport with LoggerSupport =>
   protected var indexWriter:IndexWriter = _
   protected def openIndexWriter():Unit= {
+    val enableIndex = coprocessorEnv.getRegion.getTableDesc.getConfigurationValue(RoarHbaseConstants.ENABLE_ROAR_INDEX_CONF_KEY)
+    println("=====> enableIndex",enableIndex)
     val tableName = coprocessorEnv.getRegion.getTableDesc.getTableName
     val encodedName = coprocessorEnv.getRegionInfo.getEncodedName
     val regionIndexPath = RoarHbaseConstants.REGION_INDEX_PATH_FORMAT.format(encodedName)

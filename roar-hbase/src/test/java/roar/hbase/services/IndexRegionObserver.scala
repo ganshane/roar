@@ -9,6 +9,7 @@ import stark.utils.services.LoggerSupport
 
 /**
   * index region observer
+  *
   * @author <a href="mailto:jcai@ganshane.com">Jun Tsai</a>
   * @since 2016-07-03
   */
@@ -25,6 +26,8 @@ class IndexRegionObserver extends BaseRegionObserver
 
   override def postOpen(e: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
     _env = e.getEnvironment
+    _env.getRegion.getTableDesc.getConfiguration
+    val tableName = _env.getRegion.getTableDesc.getTableName
     openIndexWriter()
     openSearcherManager()
   }
