@@ -16,6 +16,11 @@ import roar.hbase.RoarHbaseConstants
 import roar.hbase.model.ResourceDefinition
 import stark.utils.services.LoggerSupport
 
+import scala.concurrent._
+import scala.concurrent.duration.Duration
+import ExecutionContext.Implicits.global
+
+
 /**
   * support region index
   *
@@ -26,6 +31,8 @@ trait RegionIndexSupport {
   this:RegionCoprocessorEnvironmentSupport with LoggerSupport =>
   protected var indexWriterOpt:Option[IndexWriter] = None
   protected var rd:ResourceDefinition = _
+  private var flushIndexFuture:Future[Unit] = _
+
   protected def openIndexWriter():Unit= {
     val enableIndex = coprocessorEnv.getRegion.getTableDesc.getConfigurationValue(RoarHbaseConstants.ENABLE_ROAR_INDEX_CONF_KEY)
     debug("=====> enableIndex",enableIndex)
@@ -69,12 +76,21 @@ trait RegionIndexSupport {
       docOpt.foreach(indexWriter.updateDocument(rowTerm, _))
     }
   }
+  def prepareFlushIndex(): Unit ={
+    info("prepare flush index")
+    this.flushIndexFuture = Future {
+      flushIndex()
+      info("finish flush index")
+    }
+  }
+  def waitForFlushIndexThreadFinished(): Unit ={
+    Await.result(this.flushIndexFuture,Duration.Inf)
+  }
   def deleteIndex(delete:Delete):Unit={
     indexWriterOpt foreach {indexWriter=>
       val rowTerm = createSIdTerm(delete.getRow)
       debug("[{}] delete row term {}",rd.name,rowTerm)
       indexWriter.deleteDocuments(rowTerm)
-      indexWriter.commit()
     }
   }
   private def createSIdTerm(id: Array[Byte]) = {
@@ -91,6 +107,8 @@ trait RegionIndexSupport {
       IOUtils.closeStream(indexWriter)
     }
   }
+
+
 }
 
 /**

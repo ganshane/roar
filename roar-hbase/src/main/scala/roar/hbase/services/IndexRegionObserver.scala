@@ -1,12 +1,12 @@
 package roar.hbase.services
 
-import org.apache.hadoop.hbase.{CellUtil, HRegionInfo}
 import org.apache.hadoop.hbase.client.{Delete, Durability, Get, Put}
 import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, ObserverContext, RegionCoprocessorEnvironment}
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit
 import org.apache.hadoop.hbase.regionserver.{Region, Store, StoreFile}
 import org.apache.hadoop.hbase.wal.WALKey
+import org.apache.hadoop.hbase.{CellUtil, HRegionInfo}
 import stark.utils.services.LoggerSupport
 
 /**
@@ -32,9 +32,15 @@ class IndexRegionObserver extends BaseRegionObserver
     openSearcherManager()
   }
 
-  override def postFlush(e: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
-    flushIndex()
+
+  override def preFlush(e: ObserverContext[RegionCoprocessorEnvironment]):Unit={
+    prepareFlushIndex()
   }
+
+  override def postFlush(e: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
+    waitForFlushIndexThreadFinished()
+  }
+
 
   override def postCompact(e: ObserverContext[RegionCoprocessorEnvironment], store: Store, resultFile: StoreFile, request: CompactionRequest): Unit = {
   }

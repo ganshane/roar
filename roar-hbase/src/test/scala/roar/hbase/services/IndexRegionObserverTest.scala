@@ -31,11 +31,7 @@ class IndexRegionObserverTest {
   @Before
   def setup: Unit ={
     conf = HBaseConfiguration.create()
-//    conf.setStrings(CoprocessorHost.USER_REGION_COPROCESSOR_CONF_KEY,
-//      classOf[IndexRegionObserver].getName)
-    //    conf.setStrings(RoarHbaseConstants.ROAR_INDEX_HDFS_CONF_KEY,hdfsURI)
     util = new HBaseTestingUtility(conf)
-//    util.startMiniCluster()
     val rd = XmlLoader.parseXML[ResourceDefinition](getClass.getResourceAsStream("/test_res.xml"), None)
     RegionServerData.regionServerResources = Map("czrk"->rd)
 
@@ -49,7 +45,6 @@ class IndexRegionObserverTest {
 
     val coprocessorHost = new RegionCoprocessorHost(region, null, conf)
     region.setCoprocessorHost(coprocessorHost)
-    region.getCoprocessorHost.load(classOf[IndexRegionObserver],1073741823,conf)
     coprocessorHost.postOpen()
   }
   @After
@@ -85,6 +80,9 @@ class IndexRegionObserverTest {
     val delete = new Delete(row1)
     region.delete(delete)
     Assert.assertEquals(0,query("xm:xm").getCount)
+
+    //test flush
+    region.flush(true)
 
     /*
     val channel = t.coprocessorService(row1)
