@@ -61,15 +61,7 @@ private[services] object RegionServerData extends LoggerSupport{
       }
     }
 
-    override def nodeCreated(path: String): Unit = {
-      super.nodeCreated(path)
-    }
-
-    override def nodeDeleted(path: String): Unit = {
-//      debug("resource:{} deleted",path)
-      super.nodeDeleted(path)
-    }
-
+    //called when resource definition changed
     override def nodeDataChanged(path: String): Unit = {
       if(path.startsWith(RoarHbaseConstants.RESOURCES_PATH)){
         debug("resource content changed:{}",path)
