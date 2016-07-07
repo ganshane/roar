@@ -32,8 +32,13 @@ class IndexRegionServerObserverTest extends LoggerSupport{
     while(RegionServerData.regionServerResources.isEmpty){
       ZKUtil.createSetData(zkw,resPath,bytes)
     }
-    val res = RegionServerData.regionServerResources.get("czrk").get
-    Assert.assertEquals("czrk",res.name)
+    ZKUtil.setData(zkw,resPath,bytes)
+    Assert.assertEquals(1,RegionServerData.regionServerResources.size)
+    ZKUtil.setData(zkw,resPath,bytes)
+    ZKUtil.deleteNode(zkw,resPath)
+    while(RegionServerData.regionServerResources.nonEmpty){
+    }
+    Assert.assertEquals(0,RegionServerData.regionServerResources.size)
   }
   @After
   def shutdown: Unit ={

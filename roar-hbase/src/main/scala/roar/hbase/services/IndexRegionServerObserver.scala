@@ -20,7 +20,7 @@ import scala.collection.mutable.ArrayBuffer
   * @since 2016-07-06
   */
 private[services] object RegionServerData extends LoggerSupport{
-
+  @volatile
   var regionServerResources = Map[String, ResourceDefinition]()
   def addResources(zkw:ZooKeeperWatcher,resources:util.List[String]): Unit ={
     if(resources != null) {
@@ -39,10 +39,10 @@ private[services] object RegionServerData extends LoggerSupport{
   }
   class ResourceListener(zkw:ZooKeeperWatcher) extends ZooKeeperListener(zkw) {
     override def nodeChildrenChanged(path: String): Unit = {
-      debug("node:{} children changed",path)
       if(path == RoarHbaseConstants.RESOURCES_PATH){
         val resources = ZKUtil.listChildrenAndWatchThem(zkw,RoarHbaseConstants.RESOURCES_PATH)
         addResources(zkw,resources)
+        debug("resources:{} children changed,children:{},size:{}",path,resources,regionServerResources.size)
       }
     }
 
@@ -51,17 +51,24 @@ private[services] object RegionServerData extends LoggerSupport{
     }
 
     override def nodeDeleted(path: String): Unit = {
+//      debug("resource:{} deleted",path)
       super.nodeDeleted(path)
     }
 
     override def nodeDataChanged(path: String): Unit = {
-      super.nodeDataChanged(path)
+      if(path.startsWith(RoarHbaseConstants.RESOURCES_PATH)){
+        debug("resource content changed:{}",path)
+        val data = ZKUtil.getData(zkw,path)
+        val rd = XmlLoader.parseXML[ResourceDefinition](new String(data, StarkUtilsConstants.UTF8_ENCODING))
+        val remain = regionServerResources - rd.name
+        regionServerResources = remain + (rd.name->rd)
+      }
     }
   }
 }
 class IndexRegionServerObserver extends BaseRegionServerObserver with LoggerSupport{
   override def start(env: CoprocessorEnvironment): Unit = {
-    debug("start region server coprocess")
+    debug("start region server coprocessor")
     val rss = env.asInstanceOf[RegionServerCoprocessorEnvironment].getRegionServerServices
     val zkw = rss.getZooKeeper
     zkw.registerListener(new ResourceListener(zkw))
