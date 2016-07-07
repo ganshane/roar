@@ -35,6 +35,12 @@ class IndexRegionServerObserverTest extends LoggerSupport{
     ZKUtil.setData(zkw,resPath,bytes)
     Assert.assertEquals(1,RegionServerData.regionServerResources.size)
     ZKUtil.setData(zkw,resPath,bytes)
+
+    //test wrong define resource
+    val wrongRes = IOUtils.toByteArray(getClass.getResourceAsStream("/test_res_wrong.xml"))
+    val wrongResPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_PATH,"wrong_res")
+    ZKUtil.createSetData(zkw,wrongResPath,wrongRes)
+
     ZKUtil.deleteNode(zkw,resPath)
     while(RegionServerData.regionServerResources.nonEmpty){
     }

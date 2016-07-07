@@ -9,7 +9,7 @@ import roar.hbase.RoarHbaseConstants
 import roar.hbase.model.ResourceDefinition
 import roar.hbase.services.RegionServerData.ResourceListener
 import stark.utils.StarkUtilsConstants
-import stark.utils.services.{LoggerSupport, XmlLoader}
+import stark.utils.services.{StarkException, LoggerSupport, XmlLoader}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -30,11 +30,26 @@ private[services] object RegionServerData extends LoggerSupport{
         val res = it.next()
         val resPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_PATH, res)
         val data = ZKUtil.getDataAndWatch(zkw, resPath)
-        val rd = XmlLoader.parseXML[ResourceDefinition](new String(data, StarkUtilsConstants.UTF8_ENCODING))
-        buffer += rd
+        val rdOpt = parseXML(data)
+        rdOpt.foreach(buffer +=)
       }
 
       regionServerResources = buffer.map(x => (x.name, x)).toMap
+    }
+  }
+  private def parseXML(data:Array[Byte]):Option[ResourceDefinition]={
+    try {
+      if(data == null) None
+      else {
+        val rd = XmlLoader.parseXML[ResourceDefinition](
+          new String(data, StarkUtilsConstants.UTF8_ENCODING),
+          xsd = Some(getClass.getResourceAsStream("/resource.xsd")))
+        Some(rd)
+      }
+    }catch{
+      case e:StarkException=>
+        error("can't parse resource,msg:{}",e.getMessage)
+        None
     }
   }
   class ResourceListener(zkw:ZooKeeperWatcher) extends ZooKeeperListener(zkw) {
@@ -59,9 +74,12 @@ private[services] object RegionServerData extends LoggerSupport{
       if(path.startsWith(RoarHbaseConstants.RESOURCES_PATH)){
         debug("resource content changed:{}",path)
         val data = ZKUtil.getData(zkw,path)
-        val rd = XmlLoader.parseXML[ResourceDefinition](new String(data, StarkUtilsConstants.UTF8_ENCODING))
-        val remain = regionServerResources - rd.name
-        regionServerResources = remain + (rd.name->rd)
+        val rdOpt = parseXML(data)
+
+        rdOpt foreach{rd=>
+          val remain = regionServerResources - rd.name
+          regionServerResources = remain + (rd.name->rd)
+        }
       }
     }
   }

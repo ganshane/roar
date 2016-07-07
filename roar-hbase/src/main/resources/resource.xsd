@@ -52,7 +52,7 @@
   <!-- 索引部分的定义 -->
   <xs:complexType name="indexType">
     <xs:sequence>
-      <xs:element type="analyzerType" name="analyzer" default="MMSeg">
+      <xs:element type="analyzerType" name="analyzer" default="Standard">
         <xs:annotation>
           <xs:documentation>索引分词器</xs:documentation>
         </xs:annotation>
@@ -115,7 +115,7 @@
             <xs:documentation>列表展示的表头名称</xs:documentation>
           </xs:annotation>
         </xs:attribute>
-        <xs:attribute type="columnType" name="column_type" default="String">
+        <xs:attribute type="columnType" name="column_type" default="Key">
           <xs:annotation>
             <xs:documentation>列的类型</xs:documentation>
           </xs:annotation>
@@ -211,7 +211,7 @@
   </xs:complexType>
   <xs:complexType name="searchType">
     <xs:sequence>
-      <xs:element type="analyzerType" name="analyzer" default="MMSeg">
+      <xs:element type="analyzerType" name="analyzer" default="Standard">
         <xs:annotation>
           <xs:documentation>索引分词器</xs:documentation>
         </xs:annotation>
