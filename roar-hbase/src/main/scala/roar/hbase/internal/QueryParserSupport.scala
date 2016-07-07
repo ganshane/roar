@@ -107,10 +107,11 @@ trait QueryParserSupport {
           //val value = DataTypeUtils.dateToInt(term.text().toInt)
           return NumericRangeQuery.newIntRange(field, value, value, true, true)
           //return new TermQuery(new Term(field,NumericUtils.intToPrefixCoded(DataTypeUtils.dateToInt(value))))
-        } else if (field == RoarHbaseConstants.OBJECT_ID_FIELD_NAME) {
+/*        } else if (field == RoarHbaseConstants.OBJECT_ID_FIELD_NAME) {
           val value = term.text().toInt
           return NumericRangeQuery.newIntRange(field, value, value, true, true)
           //return new TermQuery(new Term(field,NumericUtils.intToPrefixCoded(value)))
+          */
         }
 
         super.newTermQuery(term)
@@ -152,7 +153,7 @@ trait QueryParserSupport {
       parser.parse(q)
     } catch {
       case NonFatal(e) =>
-        logger.error(e.toString)
+        logger.error(e.toString,e)
         throw new StarkException("fail to parse:[" + q + "]", RoarHbaseExceptionCode.FAIL_TO_PARSE_QUERY)
     }
   }

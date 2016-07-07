@@ -4,7 +4,7 @@ import java.io.File
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hbase.client.Put
+import org.apache.hadoop.hbase.client.{Delete, Put}
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.util.FSUtils
 import org.apache.hadoop.io.IOUtils
@@ -64,8 +64,17 @@ trait RegionIndexSupport {
   def index(put:Put): Unit = {
     indexWriterOpt foreach {indexWriter=>
       val rowTerm = createSIdTerm(put.getRow)
+      debug("[{}] index row term {}",rd.name,rowTerm)
       val docOpt = RegionServerData.documentSource.newDocument(rd,put)
       docOpt.foreach(indexWriter.updateDocument(rowTerm, _))
+    }
+  }
+  def deleteIndex(delete:Delete):Unit={
+    indexWriterOpt foreach {indexWriter=>
+      val rowTerm = createSIdTerm(delete.getRow)
+      debug("[{}] delete row term {}",rd.name,rowTerm)
+      indexWriter.deleteDocuments(rowTerm)
+      indexWriter.commit()
     }
   }
   private def createSIdTerm(id: Array[Byte]) = {

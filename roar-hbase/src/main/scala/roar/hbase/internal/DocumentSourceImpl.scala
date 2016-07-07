@@ -27,7 +27,7 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
   private val sidField = new BinaryDocValuesField(RoarHbaseConstants.OBJECT_ID_PAYLOAD_FIELD, new BytesRef)
 //  private val oidField = new NumericDocValuesField(RoarHbaseConstants.OID_FILED_NAME, 0)
   private val cacheCreator = new ConcurrentHashMap[String, DocumentCreator]()
-//  private val idField = new IntField(RoarHbaseConstants.OBJECT_ID_FIELD_NAME, 1, IntField.TYPE_NOT_STORED)
+  private val idField = new StringField(RoarHbaseConstants.OBJECT_ID_FIELD_NAME,"", Field.Store.NO)
   //TODO 调整为INT类型
   private val utField = new LongField(RoarHbaseConstants.UPDATE_TIME_FIELD_NAME, 1L, LongField.TYPE_NOT_STORED)
 
@@ -59,6 +59,10 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
     val doc = creator.newDocument(rd,put)
     if(doc.getFields.nonEmpty) {
       //用来快速更新
+      idField.setStringValue(Bytes.toString(put.getRow))
+      doc.add(idField)
+
+      //用来获取对应的列值
       sidField.setBytesValue(put.getRow)
       doc.add(sidField)
 

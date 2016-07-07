@@ -1,6 +1,6 @@
 package roar.hbase.services
 
-import org.apache.hadoop.hbase.client.{Durability, Put}
+import org.apache.hadoop.hbase.client.{Delete, Durability, Put}
 import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, ObserverContext, RegionCoprocessorEnvironment}
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit
@@ -46,6 +46,11 @@ class IndexRegionObserver extends BaseRegionObserver
     mybeRefresh()
   }
 
+
+  override def postDelete(e: ObserverContext[RegionCoprocessorEnvironment], delete: Delete, edit: WALEdit, durability: Durability): Unit = {
+    deleteIndex(delete)
+    mybeRefresh()
+  }
 
   override def postSplit(e: ObserverContext[RegionCoprocessorEnvironment], l: Region, r: Region): Unit = {
   }

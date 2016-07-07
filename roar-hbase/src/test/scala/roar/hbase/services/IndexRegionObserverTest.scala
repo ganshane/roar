@@ -2,7 +2,7 @@ package roar.hbase.services
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase._
-import org.apache.hadoop.hbase.client.Put
+import org.apache.hadoop.hbase.client.{Delete, Put}
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
 import org.apache.hadoop.hbase.regionserver.{HRegion, RegionCoprocessorHost}
 import org.apache.hadoop.hbase.util.{ByteStringer, Bytes}
@@ -41,7 +41,7 @@ class IndexRegionObserverTest {
     tableDesc.addFamily(colFamilyDesc)
     tableDesc.addCoprocessor(classOf[IndexRegionObserver].getName)
     val regionInfo = new HRegionInfo(tableName, null, null, false);
-    val regionPath = new Path("target/xx");
+    val regionPath = new Path("target/xx")
     region = HRegion.createHRegion(regionInfo, regionPath, conf, tableDesc);
 
     val coprocessorHost = new RegionCoprocessorHost(region, null, conf)
@@ -69,12 +69,13 @@ class IndexRegionObserverTest {
   def test_put: Unit ={
     val p = new Put(row1)
     p.addColumn(family, xm, xm)
-    // before HBASE-4331, this would throw an exception
     region.put(p)
 
-    val response = query("xm:xm")
-    Assert.assertEquals(1,response.getCount)
+    Assert.assertEquals(1,query("xm:xm").getCount)
 
+    val delete = new Delete(row1)
+    region.delete(delete)
+    Assert.assertEquals(0,query("xm:xm").getCount)
 
     /*
     val channel = t.coprocessorService(row1)
