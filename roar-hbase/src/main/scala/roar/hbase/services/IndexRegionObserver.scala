@@ -26,8 +26,6 @@ class IndexRegionObserver extends BaseRegionObserver
 
   override def postOpen(e: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
     _env = e.getEnvironment
-    _env.getRegion.getTableDesc.getConfiguration
-    val tableName = _env.getRegion.getTableDesc.getTableName
     openIndexWriter()
     openSearcherManager()
   }

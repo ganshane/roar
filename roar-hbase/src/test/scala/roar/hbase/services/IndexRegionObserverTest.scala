@@ -3,13 +3,17 @@ package roar.hbase.services
 import java.io.IOException
 
 import junit.framework.Assert._
+import org.apache.commons.io.IOUtils
 import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.coprocessor.CoprocessorHost
 import org.apache.hadoop.hbase.regionserver.HRegion
 import org.apache.hadoop.hbase.util.Bytes
+import org.apache.hadoop.hbase.zookeeper.ZKUtil
 import org.junit.{After, Assert, Before, Test}
+import roar.hbase.RoarHbaseConstants
 import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest}
+import stark.utils.services.LoggerSupport
 
 /**
   * first hbase test case
@@ -17,11 +21,13 @@ import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest}
   * @author <a href="mailto:jcai@ganshane.com">Jun Tsai</a>
   * @since 2016-06-29
   */
-class IndexRegionObserverTest{
+class IndexRegionObserverTest extends LoggerSupport{
   private var util:HBaseTestingUtility = _
   private var htd:HTableDescriptor = _
   private var r:HRegion = _
-  private val tableName = TableName.valueOf("test")
+  private val tableName = TableName.valueOf("czrk")
+  private val family = Bytes.toBytes("info")
+
   private val dummy = Bytes.toBytes("dummy")
   private val row1 = Bytes.toBytes("r1")
   private val row2 = Bytes.toBytes("r2")
@@ -30,22 +36,24 @@ class IndexRegionObserverTest{
 
   @Before
   def setup: Unit ={
-    /*
-    val baseDir = Files.createTempDirectory("test_hdfs_index").toFile.getAbsoluteFile
-    val hadoopConf= new Configuration()
-    hadoopConf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath)
-    val builder = new MiniDFSCluster.Builder(hadoopConf)
-    val hdfsCluster = builder.build()
-    val hdfsURI = "hdfs://localhost:"+ hdfsCluster.getNameNodePort() + "/"
-    */
-
     val conf = HBaseConfiguration.create()
+    conf.setStrings(CoprocessorHost.REGIONSERVER_COPROCESSOR_CONF_KEY,
+      classOf[IndexRegionServerObserver].getName)
     conf.setStrings(CoprocessorHost.USER_REGION_COPROCESSOR_CONF_KEY,
       classOf[IndexRegionObserver].getName)
 //    conf.setStrings(RoarHbaseConstants.ROAR_INDEX_HDFS_CONF_KEY,hdfsURI)
-
     util = new HBaseTestingUtility(conf)
     util.startMiniCluster()
+
+    //create resource definition
+    val zkw = util.getZooKeeperWatcher
+    val bytes = IOUtils.toByteArray(getClass.getResourceAsStream("/test_res.xml"))
+    val resPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_PATH,tableName.getNameAsString)
+    debug("resPath:{}",resPath)
+    while(RegionServerData.regionServerResources.isEmpty){
+      ZKUtil.createSetData(zkw,resPath,bytes)
+    }
+    debug("resource loaded for path:{}",resPath)
 
 
     val admin = util.getHBaseAdmin()
@@ -56,10 +64,7 @@ class IndexRegionObserverTest{
       admin.deleteTable(tableName)
     }
 
-    util.createTable(tableName, Array[Array[Byte]](dummy, test))
-
-
-
+    util.createTable(tableName, Array[Array[Byte]](family))
   }
   @After
   def tearDown: Unit ={
@@ -68,18 +73,10 @@ class IndexRegionObserverTest{
 
   @Test
   def testSimple: Unit ={
-    /*
+
     val t = util.getConnection.getTable(tableName)
     val p = new Put(row1)
-    p.addColumn(test,dummy,dummy)
-    t.put(p)
-    checkRowAndDelete(t,row1,1)
-    t.close()
-    */
-
-    val t: Table = util.getConnection.getTable(tableName)
-    var p: Put = new Put(row1)
-    p.addColumn(test, dummy, dummy)
+    p.addColumn(family, dummy, dummy)
     // before HBASE-4331, this would throw an exception
     t.put(p)
 
@@ -90,13 +87,7 @@ class IndexRegionObserverTest{
     val response = service.query(null,request.build())
     Assert.assertEquals(1,response.getCount)
 
-    checkRowAndDelete(t, row1, 1)
-    p = new Put(row1)
-    p.addColumn(test, dummy, dummy)
-    // before HBASE-4331, this would throw an exception
-    t.put(p)
-    checkRowAndDelete(t, row1, 1)
-    t.close
+    t.close()
   }
 
   @throws(classOf[IOException])

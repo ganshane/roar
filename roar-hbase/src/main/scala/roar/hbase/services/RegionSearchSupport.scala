@@ -12,36 +12,39 @@ import stark.utils.services.LoggerSupport
 
 /**
   * region search support
- *
+  *
   * @author <a href="mailto:jcai@ganshane.com">Jun Tsai</a>
   * @since 2016-07-06
   */
 trait RegionSearchSupport {
   this:RegionIndexSupport with LoggerSupport with RegionCoprocessorEnvironmentSupport =>
-  private var searcherManager:SearcherManager = _
+  private var searcherManagerOpt:Option[SearcherManager] = None
 
   protected def openSearcherManager(): Unit = {
-    searcherManager = new SearcherManager(indexWriter,new SearcherFactory())
+    searcherManagerOpt = indexWriterOpt.map(new SearcherManager(_,new SearcherFactory()))
   }
   def search(q:String,offset:Int=0,limit:Int=30): scala.List[Document]={
-    var searcher: IndexSearcher = null
-    try {
-      searcher = searcherManager.acquire()
-      println("max doc:"+searcher.getIndexReader.maxDoc())
-      val parser = new QueryParser("id",RoarHbaseConstants.defaultAnalyzer)
-      val query = parser.parse(q)
-      val docs = searcher.search(query,offset+limit)
-      if(docs.scoreDocs.length > offset) {
-        docs.scoreDocs.drop(offset).map{scoreDoc =>
-          convert(searcher.doc(scoreDoc.doc))
-        }.toList
-      } else Nil
-    }finally {
-      searcherManager.release(searcher)
+    val resultOpt = searcherManagerOpt map { searcherManager =>
+      var searcher: IndexSearcher = null
+      try {
+        searcher = searcherManager.acquire()
+        println("max doc:" + searcher.getIndexReader.maxDoc())
+        val parser = new QueryParser("id", RoarHbaseConstants.defaultAnalyzer)
+        val query = parser.parse(q)
+        val docs = searcher.search(query, offset + limit)
+        if (docs.scoreDocs.length > offset) {
+          docs.scoreDocs.drop(offset).map { scoreDoc =>
+            convert(searcher.doc(scoreDoc.doc))
+          }.toList
+        } else Nil
+      } finally {
+        searcherManager.release(searcher)
+      }
     }
+    resultOpt getOrElse Nil
   }
   protected def mybeRefresh(): Unit ={
-    searcherManager.maybeRefresh()
+    searcherManagerOpt.foreach(_.maybeRefresh)
   }
   private def convert(d:Document):Document= {
     val timestampField = d.getField(RoarHbaseConstants.TIMESTAMP_FIELD)
@@ -69,6 +72,6 @@ trait RegionSearchSupport {
     doc
   }
   protected def closeSearcher(): Unit ={
-    IOUtils.closeStream(searcherManager)
+    searcherManagerOpt.foreach(IOUtils.closeStream)
   }
 }

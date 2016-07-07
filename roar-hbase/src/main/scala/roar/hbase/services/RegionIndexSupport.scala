@@ -24,45 +24,54 @@ import stark.utils.services.LoggerSupport
   */
 trait RegionIndexSupport {
   this:RegionCoprocessorEnvironmentSupport with LoggerSupport =>
-  protected var indexWriter:IndexWriter = _
+  protected var indexWriterOpt:Option[IndexWriter] = None
   protected def openIndexWriter():Unit= {
     val enableIndex = coprocessorEnv.getRegion.getTableDesc.getConfigurationValue(RoarHbaseConstants.ENABLE_ROAR_INDEX_CONF_KEY)
     println("=====> enableIndex",enableIndex)
     val tableName = coprocessorEnv.getRegion.getTableDesc.getTableName
-    val encodedName = coprocessorEnv.getRegionInfo.getEncodedName
-    val regionIndexPath = RoarHbaseConstants.REGION_INDEX_PATH_FORMAT.format(encodedName)
+    val regionEncodedName = coprocessorEnv.getRegionInfo.getEncodedName
+    val resourceDefineOpt = RegionServerData.regionServerResources.get(tableName.getNameAsString)
+    resourceDefineOpt match {
+      case Some(rd) =>
 
-    val rootDir = FSUtils.getRootDir(coprocessorEnv.getConfiguration)
-    val tableDir = FSUtils.getTableDir(rootDir,tableName)
+        val regionIndexPath = RoarHbaseConstants.REGION_INDEX_PATH_FORMAT.format(regionEncodedName)
 
-    val conf=new Configuration()
-    val indexPath = new Path(tableDir,regionIndexPath)
-    logger.info("create index with path {}",indexPath)
+        val rootDir = FSUtils.getRootDir(coprocessorEnv.getConfiguration)
+        val tableDir = FSUtils.getTableDir(rootDir, tableName)
 
-    val directory = new HdfsDirectory(indexPath,HdfsLockFactoryInHbase,conf)
-    val config=new IndexWriterConfig(RoarHbaseConstants.defaultAnalyzer)
-    val mergePolicy = new LogByteSizeMergePolicy()
-    // compound files cannot be used with HDFS
-    //    mergePolicy.setUseCompoundFile(false)
-    config.setMergePolicy(mergePolicy)
-    config.setMergeScheduler(new SerialMergeScheduler())
-    indexWriter = new IndexWriter(directory,config)
+        val conf = new Configuration()
+        val indexPath = new Path(tableDir, regionIndexPath)
+        logger.info("create index with path {}", indexPath)
+
+        val directory = new HdfsDirectory(indexPath, HdfsLockFactoryInHbase, conf)
+        val config = new IndexWriterConfig(RoarHbaseConstants.defaultAnalyzer)
+        val mergePolicy = new LogByteSizeMergePolicy()
+        // compound files cannot be used with HDFS
+        //    mergePolicy.setUseCompoundFile(false)
+        config.setMergePolicy(mergePolicy)
+        config.setMergeScheduler(new SerialMergeScheduler())
+        indexWriterOpt = Some(new IndexWriter(directory, config))
+      case None=>
+        info("{} index not supported",tableName.getNameAsString)
+    }
   }
   def index(rowArray:Array[Byte],familyMap:Map[Array[Byte], List[Cell]]): Unit = {
-    val row = new BytesRef(rowArray)
-    val rowTerm = new Term(RoarHbaseConstants.ROW_FIELD, row)
-    //遍历所有的列族
-    val doc = RoarHbaseConstants.DEFAULT_TRANSFER.transform(row,familyMap)
-    if (doc != null) {
-      indexWriter.updateDocument(rowTerm, doc)
+    indexWriterOpt foreach {indexWriter=>
+      val row = new BytesRef(rowArray)
+      val rowTerm = new Term(RoarHbaseConstants.ROW_FIELD, row)
+      //遍历所有的列族
+      val doc = RoarHbaseConstants.DEFAULT_TRANSFER.transform(row,familyMap)
+      if (doc != null) {
+        indexWriter.updateDocument(rowTerm, doc)
+      }
     }
   }
   protected def flushIndex(): Unit ={
     //提交索引到磁盘
-    indexWriter.commit()
+    indexWriterOpt.foreach(_.commit())
   }
   protected def closeIndex():Unit={
-    IOUtils.closeStream(indexWriter)
+    indexWriterOpt.foreach(IOUtils.closeStream)
   }
 }
 class DefaultDocumentTransformer {
