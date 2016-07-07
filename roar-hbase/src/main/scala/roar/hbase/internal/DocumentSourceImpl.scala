@@ -4,7 +4,7 @@ package roar.hbase.internal
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.hadoop.hbase.client.Put
+import org.apache.hadoop.hbase.client.{Result, Put}
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.document.{Document, Field, _}
 import org.apache.lucene.util.BytesRef
@@ -32,7 +32,7 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
   private val utField = new LongField(RoarHbaseConstants.UPDATE_TIME_FIELD_NAME, 1L, LongField.TYPE_NOT_STORED)
 
 
-  override def newDocument(rd: ResourceDefinition, put: Put): Option[Document] = {
+  override def newDocument(rd: ResourceDefinition, put: Put,result: Result): Option[Document] = {
 
     //优先使用自定义的DocumentCreator
     var creator = factories.get(rd.name)
@@ -56,7 +56,7 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
           creator = value
       }
     }
-    val doc = creator.newDocument(rd,put)
+    val doc = creator.newDocument(rd,result)
     if(doc.getFields.nonEmpty) {
       //用来快速更新
       idField.setStringValue(Bytes.toString(put.getRow))
@@ -81,11 +81,11 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
 class DefaultDocumentCreator extends DocumentCreator {
   private val cachedFields = scala.collection.mutable.Map[String, (Field,Option[Field])]()
 
-  override def newDocument(rd: ResourceDefinition, put: Put): Document = {
+  override def newDocument(rd: ResourceDefinition, result: Result): Document = {
     val doc = new Document
 
     for ((col, index) <- rd.properties.view.zipWithIndex) {
-      val valueOpt = col.readDfsValue(put)
+      val valueOpt = col.readDfsValue(result)
       valueOpt match {
         case Some(value) =>
           val f = cachedFields.get(col.name)

@@ -16,7 +16,7 @@ object RoarHbaseConstants {
   final val RESOURCE_PATH_FORMAT=RESOURCES_PATH+"/%s"
 
   /*Index Constant*/
-  final val OBJECT_ID_FIELD_NAME = "id_"
+  final val OBJECT_ID_FIELD_NAME = "_id"
   final val UPDATE_TIME_FIELD_NAME = "_ut"
   final val OID_FILED_NAME= "_OID"
 

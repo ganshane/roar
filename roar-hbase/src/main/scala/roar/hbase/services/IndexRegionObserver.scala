@@ -1,6 +1,6 @@
 package roar.hbase.services
 
-import org.apache.hadoop.hbase.client.{Delete, Durability, Put}
+import org.apache.hadoop.hbase.client.{Delete, Durability, Get, Put}
 import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, ObserverContext, RegionCoprocessorEnvironment}
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit
@@ -42,7 +42,20 @@ class IndexRegionObserver extends BaseRegionObserver
     closeIndex()
   }
   override def postPut(e: ObserverContext[RegionCoprocessorEnvironment], put: Put, edit: WALEdit, durability: Durability): Unit = {
-    index(put)
+    /**
+      * 因为两次put针对不同的column,在put中并未包含全部的信息,
+      * 如果仅仅使用put来进行索引,可能会导致丢失数据.
+      * 这里使用一个Get从本Region区域找到全部数据进行索引
+      */
+    val get = new Get(put.getRow)
+    /*
+    if(put.getTimeStamp != HConstants.LATEST_TIMESTAMP){
+      get.setTimeStamp(put.getTimeStamp)
+    }
+    */
+    val result = _env.getRegion.get(get)
+
+    index(put,result)
     mybeRefresh()
   }
 

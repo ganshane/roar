@@ -6,9 +6,9 @@ import org.apache.hadoop.hbase.client.{Delete, Put}
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
 import org.apache.hadoop.hbase.regionserver.{HRegion, RegionCoprocessorHost}
 import org.apache.hadoop.hbase.util.{ByteStringer, Bytes}
-import org.junit.{Assert, After, Before, Test}
+import org.junit.{After, Assert, Before, Test}
 import roar.hbase.model.ResourceDefinition
-import roar.protocol.generated.RoarProtos.{SearchResponse, IndexSearchService, SearchRequest}
+import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
 import stark.utils.services.XmlLoader
 
 /**
@@ -21,8 +21,9 @@ class IndexRegionObserverTest {
   private val tableName = TableName.valueOf("czrk")
   private val family = Bytes.toBytes("info")
 
-  private val xm = Bytes.toBytes("xm")
   private val row1 = Bytes.toBytes("r1")
+  private val xm = Bytes.toBytes("xm")
+  private val xb = Bytes.toBytes("xb")
   private var region:HRegion = _
 
   @Before
@@ -67,12 +68,18 @@ class IndexRegionObserverTest {
   }
   @Test
   def test_put: Unit ={
-    val p = new Put(row1)
+    var p = new Put(row1)
     p.addColumn(family, xm, xm)
     region.put(p)
 
     Assert.assertEquals(1,query("xm:xm").getCount)
 
+    p = new Put(row1)
+    p.addColumn(family, xb, xb)
+    region.put(p)
+    Assert.assertEquals(1,query("xb:xb").getCount)
+    //当再次put某个字段的时候,xm未被索引
+    Assert.assertEquals(1,query("xm:xm").getCount)
     val delete = new Delete(row1)
     region.delete(delete)
     Assert.assertEquals(0,query("xm:xm").getCount)

@@ -2,7 +2,7 @@
 // site: http://www.ganshane.com
 package roar.hbase.services
 
-import org.apache.hadoop.hbase.client.Put
+import org.apache.hadoop.hbase.client.{Result, Put}
 import org.apache.lucene.document.Document
 import roar.hbase.model.ResourceDefinition
 
@@ -12,8 +12,8 @@ import roar.hbase.model.ResourceDefinition
   * @author jcai
  */
 trait DocumentCreator{
-  def newDocument(rd:ResourceDefinition,put:Put): Document
+  def newDocument(rd:ResourceDefinition,result:Result): Document
 }
 trait DocumentSource{
-  def newDocument(rd:ResourceDefinition,put:Put): Option[Document]
+  def newDocument(rd:ResourceDefinition,put:Put,result:Result): Option[Document]
 }
