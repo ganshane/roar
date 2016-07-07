@@ -1,10 +1,12 @@
 package roar.hbase.services
 
+import org.apache.hadoop.hbase.{CellUtil, HRegionInfo}
 import org.apache.hadoop.hbase.client.{Delete, Durability, Get, Put}
 import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, ObserverContext, RegionCoprocessorEnvironment}
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit
 import org.apache.hadoop.hbase.regionserver.{Region, Store, StoreFile}
+import org.apache.hadoop.hbase.wal.WALKey
 import stark.utils.services.LoggerSupport
 
 /**
@@ -55,13 +57,26 @@ class IndexRegionObserver extends BaseRegionObserver
     */
     val result = _env.getRegion.get(get)
 
-    index(put,result)
+    index(put.getTimeStamp,result)
     mybeRefresh()
   }
 
 
   override def postDelete(e: ObserverContext[RegionCoprocessorEnvironment], delete: Delete, edit: WALEdit, durability: Durability): Unit = {
     deleteIndex(delete)
+    mybeRefresh()
+  }
+
+  override def postWALRestore(env: ObserverContext[_ <: RegionCoprocessorEnvironment], info: HRegionInfo, logKey: WALKey, logEdit: WALEdit): Unit = {
+    val cells = logEdit.getCells
+    val it = cells.iterator()
+    while(it.hasNext){
+      val cell = it.next()
+      val get = new Get(CellUtil.cloneRow(cell))
+
+      val result = _env.getRegion.get(get)
+      index(cell.getTimestamp,result)
+    }
     mybeRefresh()
   }
 

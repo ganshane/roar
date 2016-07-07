@@ -32,7 +32,7 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
   private val utField = new LongField(RoarHbaseConstants.UPDATE_TIME_FIELD_NAME, 1L, LongField.TYPE_NOT_STORED)
 
 
-  override def newDocument(rd: ResourceDefinition, put: Put,result: Result): Option[Document] = {
+  override def newDocument(rd: ResourceDefinition, timestamp:Long,result: Result): Option[Document] = {
 
     //优先使用自定义的DocumentCreator
     var creator = factories.get(rd.name)
@@ -59,20 +59,20 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
     val doc = creator.newDocument(rd,result)
     if(doc.getFields.nonEmpty) {
       //用来快速更新
-      idField.setStringValue(Bytes.toString(put.getRow))
+      idField.setStringValue(Bytes.toString(result.getRow))
       doc.add(idField)
 
       //用来获取对应的列值
-      sidField.setBytesValue(put.getRow)
+      sidField.setBytesValue(result.getRow)
       doc.add(sidField)
 
       //设置更新时间
-      utField.setLongValue(put.getTimeStamp)
+      utField.setLongValue(timestamp)
       doc.add(utField)
 
       Some(doc)
     } else {
-      warn("[{}] no fields to indexed for key:{}",rd.name,Bytes.toString(put.getRow))
+      warn("[{}] no fields to indexed for key:{}",rd.name,Bytes.toString(result.getRow))
       None
     }
   }

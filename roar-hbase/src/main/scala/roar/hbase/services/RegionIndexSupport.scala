@@ -4,7 +4,7 @@ import java.io.File
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hbase.client.{Put, Delete, Result}
+import org.apache.hadoop.hbase.client.{Delete, Result}
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.util.FSUtils
 import org.apache.hadoop.io.IOUtils
@@ -61,11 +61,11 @@ trait RegionIndexSupport {
         info("{} index not supported",tableName.getNameAsString)
     }
   }
-  def index(put:Put,result:Result): Unit = {
+  def index(timestamp:Long,result:Result): Unit = {
     indexWriterOpt foreach {indexWriter=>
-      val rowTerm = createSIdTerm(put.getRow)
+      val rowTerm = createSIdTerm(result.getRow)
       debug("[{}] index row term {}",rd.name,rowTerm)
-      val docOpt = RegionServerData.documentSource.newDocument(rd,put,result)
+      val docOpt = RegionServerData.documentSource.newDocument(rd,timestamp,result)
       docOpt.foreach(indexWriter.updateDocument(rowTerm, _))
     }
   }

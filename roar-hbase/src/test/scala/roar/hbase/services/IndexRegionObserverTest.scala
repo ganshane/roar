@@ -1,5 +1,6 @@
 package roar.hbase.services
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client.{Delete, Put}
@@ -25,10 +26,11 @@ class IndexRegionObserverTest {
   private val xm = Bytes.toBytes("xm")
   private val xb = Bytes.toBytes("xb")
   private var region:HRegion = _
+  private var conf:Configuration = _
 
   @Before
   def setup: Unit ={
-    val conf = HBaseConfiguration.create()
+    conf = HBaseConfiguration.create()
 //    conf.setStrings(CoprocessorHost.USER_REGION_COPROCESSOR_CONF_KEY,
 //      classOf[IndexRegionObserver].getName)
     //    conf.setStrings(RoarHbaseConstants.ROAR_INDEX_HDFS_CONF_KEY,hdfsURI)
