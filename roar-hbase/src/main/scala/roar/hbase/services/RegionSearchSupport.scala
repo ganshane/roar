@@ -1,13 +1,14 @@
 package roar.hbase.services
 
 import org.apache.hadoop.hbase.client.Get
-import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.io.IOUtils
-import org.apache.lucene.document.Field.Store
-import org.apache.lucene.document.{Document, StringField}
+import org.apache.lucene.document.Document
+import org.apache.lucene.index.IndexReader
 import org.apache.lucene.queryparser.classic.QueryParser
 import org.apache.lucene.search.{IndexSearcher, SearcherFactory, SearcherManager}
+import org.apache.lucene.util.BytesRef
 import roar.hbase.RoarHbaseConstants
+import roar.hbase.internal.InternalIndexSearcher
 import stark.utils.services.LoggerSupport
 
 /**
@@ -21,7 +22,11 @@ trait RegionSearchSupport {
   private var searcherManagerOpt:Option[SearcherManager] = None
 
   protected def openSearcherManager(): Unit = {
-    searcherManagerOpt = indexWriterOpt.map(new SearcherManager(_,new SearcherFactory()))
+    searcherManagerOpt = indexWriterOpt.map(new SearcherManager(_,new SearcherFactory(){
+      override def newSearcher(reader: IndexReader, previousReader: IndexReader): IndexSearcher = {
+        new InternalIndexSearcher(reader,rd,null)
+      }
+    }))
   }
   def search(q:String,offset:Int=0,limit:Int=30): scala.List[Document]={
     val resultOpt = searcherManagerOpt map { searcherManager =>
@@ -34,7 +39,7 @@ trait RegionSearchSupport {
         val docs = searcher.search(query, offset + limit)
         if (docs.scoreDocs.length > offset) {
           docs.scoreDocs.drop(offset).map { scoreDoc =>
-            convert(searcher.doc(scoreDoc.doc))
+            convert(searcher.asInstanceOf[InternalIndexSearcher].rowId(scoreDoc.doc))
           }.toList
         } else Nil
       } finally {
@@ -46,19 +51,16 @@ trait RegionSearchSupport {
   protected def mybeRefresh(): Unit ={
     searcherManagerOpt.foreach(_.maybeRefresh)
   }
-  private def convert(d:Document):Document= {
-    val timestampField = d.getField(RoarHbaseConstants.TIMESTAMP_FIELD)
-    val timestamp = timestampField.numericValue().longValue()
-    val rowField = d.getField(RoarHbaseConstants.ROW_FIELD)
-    val rowBin= rowField.binaryValue()
+  private def convert(rowBin:BytesRef):Document= {
     val row = new Array[Byte](rowBin.length)
     System.arraycopy(rowBin.bytes,rowBin.offset,row,0,row.length)
     val get = new Get(row)
-    get.setTimeStamp(timestamp)
+//    get.setTimeStamp(timestamp)
     
     val doc = new Document()
     val result = coprocessorEnv.getRegion.get(get, false)
     val size = result.size()
+    /*
 
     Range(0,size).foreach{i=>
       val cell = result.get(i)
@@ -68,7 +70,8 @@ trait RegionSearchSupport {
       val field = new StringField(key, value, Store.NO)
       doc.add(field)
     }
-    doc.add(rowField)
+    */
+//    doc.add(rowField)
     doc
   }
   protected def closeSearcher(): Unit ={

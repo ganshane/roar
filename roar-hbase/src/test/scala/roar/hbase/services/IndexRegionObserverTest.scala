@@ -7,7 +7,6 @@ import org.apache.commons.io.IOUtils
 import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.coprocessor.CoprocessorHost
-import org.apache.hadoop.hbase.regionserver.HRegion
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.zookeeper.ZKUtil
 import org.junit.{After, Assert, Before, Test}
@@ -23,16 +22,11 @@ import stark.utils.services.LoggerSupport
   */
 class IndexRegionObserverTest extends LoggerSupport{
   private var util:HBaseTestingUtility = _
-  private var htd:HTableDescriptor = _
-  private var r:HRegion = _
   private val tableName = TableName.valueOf("czrk")
   private val family = Bytes.toBytes("info")
 
-  private val dummy = Bytes.toBytes("dummy")
+  private val xm = Bytes.toBytes("xm")
   private val row1 = Bytes.toBytes("r1")
-  private val row2 = Bytes.toBytes("r2")
-  private val row3 = Bytes.toBytes("r3")
-  private val test = Bytes.toBytes("test")
 
   @Before
   def setup: Unit ={
@@ -75,14 +69,14 @@ class IndexRegionObserverTest extends LoggerSupport{
 
     val t = util.getConnection.getTable(tableName)
     val p = new Put(row1)
-    p.addColumn(family, dummy, dummy)
+    p.addColumn(family, xm, xm)
     // before HBASE-4331, this would throw an exception
     t.put(p)
 
     val channel = t.coprocessorService(row1)
     val service = IndexSearchService.newBlockingStub(channel)
     val request = SearchRequest.newBuilder()
-    request.setQ("dummy:dummy")
+    request.setQ("xm:xm")
     val response = service.query(null,request.build())
     Assert.assertEquals(1,response.getCount)
 

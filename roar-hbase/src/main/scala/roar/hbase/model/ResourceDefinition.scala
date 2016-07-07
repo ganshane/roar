@@ -165,7 +165,7 @@ object ResourceDefinition {
     var queryType: QueryType = QueryType.String
     /** 列的属性，可选 Int Long String Date **/
     @XmlAttribute(name = "column_type")
-    var columnType: ColumnType = ColumnType.String
+    var columnType: ColumnType = ColumnType.Key
     /** 格式，通常用作，字符型的日期类型,此值是将数据库中格式转换 **/
     @XmlAttribute(name = "db_format")
     var dbFormat: String = _

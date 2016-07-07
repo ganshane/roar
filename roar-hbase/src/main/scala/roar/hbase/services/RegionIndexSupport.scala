@@ -1,19 +1,16 @@
 package roar.hbase.services
 
-import java.util.{List, Map}
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hbase.Cell
+import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
-import org.apache.hadoop.hbase.util.{Bytes, FSUtils}
+import org.apache.hadoop.hbase.util.FSUtils
 import org.apache.hadoop.io.IOUtils
-import org.apache.lucene.document.Field.Store
-import org.apache.lucene.document._
 import org.apache.lucene.index._
 import org.apache.lucene.util.BytesRef
 import org.apache.solr.store.hdfs.HdfsDirectory
 import roar.hbase.RoarHbaseConstants
+import roar.hbase.model.ResourceDefinition
 import stark.utils.services.LoggerSupport
 
 /**
@@ -25,15 +22,16 @@ import stark.utils.services.LoggerSupport
 trait RegionIndexSupport {
   this:RegionCoprocessorEnvironmentSupport with LoggerSupport =>
   protected var indexWriterOpt:Option[IndexWriter] = None
+  protected var rd:ResourceDefinition = _
   protected def openIndexWriter():Unit= {
     val enableIndex = coprocessorEnv.getRegion.getTableDesc.getConfigurationValue(RoarHbaseConstants.ENABLE_ROAR_INDEX_CONF_KEY)
-    println("=====> enableIndex",enableIndex)
+    debug("=====> enableIndex",enableIndex)
     val tableName = coprocessorEnv.getRegion.getTableDesc.getTableName
     val regionEncodedName = coprocessorEnv.getRegionInfo.getEncodedName
     val resourceDefineOpt = RegionServerData.regionServerResources.get(tableName.getNameAsString)
     resourceDefineOpt match {
       case Some(rd) =>
-
+        this.rd = rd
         val regionIndexPath = RoarHbaseConstants.REGION_INDEX_PATH_FORMAT.format(regionEncodedName)
 
         val rootDir = FSUtils.getRootDir(coprocessorEnv.getConfiguration)
@@ -55,16 +53,16 @@ trait RegionIndexSupport {
         info("{} index not supported",tableName.getNameAsString)
     }
   }
-  def index(rowArray:Array[Byte],familyMap:Map[Array[Byte], List[Cell]]): Unit = {
+  def index(put:Put): Unit = {
     indexWriterOpt foreach {indexWriter=>
-      val row = new BytesRef(rowArray)
-      val rowTerm = new Term(RoarHbaseConstants.ROW_FIELD, row)
-      //遍历所有的列族
-      val doc = RoarHbaseConstants.DEFAULT_TRANSFER.transform(row,familyMap)
-      if (doc != null) {
-        indexWriter.updateDocument(rowTerm, doc)
-      }
+      val rowTerm = createSIdTerm(put.getRow)
+      val docOpt = RegionServerData.documentSource.newDocument(rd,put)
+      docOpt.foreach(indexWriter.updateDocument(rowTerm, _))
     }
+  }
+  private def createSIdTerm(id: Array[Byte]) = {
+    val bb = new BytesRef(id)
+    new Term(RoarHbaseConstants.OBJECT_ID_FIELD_NAME, bb)
   }
   protected def flushIndex(): Unit ={
     //提交索引到磁盘
@@ -73,43 +71,6 @@ trait RegionIndexSupport {
   protected def closeIndex():Unit={
     indexWriterOpt.foreach(IOUtils.closeStream)
   }
-}
-class DefaultDocumentTransformer {
-  def transform(row:BytesRef,familyMap:Map[Array[Byte], List[Cell]]):Document={
-    var timestamp:Long = -1
-    val doc = new Document()
-    var added = false
-    val it = familyMap.entrySet().iterator()
-    while(it.hasNext){
-      val entry = it.next
-      val value = entry.getValue
-      //val family = Bytes.toString(key)
-      val valueIt = value.iterator()
-      while(valueIt.hasNext){
-        val kv = valueIt.next()
-        timestamp = kv.getTimestamp
-        val name = Bytes.toString(kv.getQualifierArray,kv.getQualifierOffset,kv.getQualifierLength)
-        val value = kv.getValueArray
-        val field = new StringField(name, new BytesRef(value, kv.getValueOffset,kv.getValueLength),Store.NO)
-        doc.add(field)
-        added = true
-      }
-    }
-    if (!added) {
-      return null
-    }
-    addFields(row, timestamp, doc)
-
-    doc
-  }
-
-  private def addFields(row:BytesRef, timestamp:Long, doc:Document) {
-    val rowField = new StringField(RoarHbaseConstants.ROW_FIELD, row, Store.YES)
-    doc.add(rowField)
-    val timestampField = new LongField(RoarHbaseConstants.TIMESTAMP_FIELD, timestamp, Store.YES)
-    doc.add(timestampField)
-  }
-
 }
 
 /**

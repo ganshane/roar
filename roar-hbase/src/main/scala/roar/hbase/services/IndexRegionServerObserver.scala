@@ -6,6 +6,7 @@ import org.apache.hadoop.hbase.CoprocessorEnvironment
 import org.apache.hadoop.hbase.coprocessor.{BaseRegionServerObserver, RegionServerCoprocessorEnvironment}
 import org.apache.hadoop.hbase.zookeeper.{ZKUtil, ZooKeeperListener, ZooKeeperWatcher}
 import roar.hbase.RoarHbaseConstants
+import roar.hbase.internal.DocumentSourceImpl
 import roar.hbase.model.ResourceDefinition
 import roar.hbase.services.RegionServerData.ResourceListener
 import stark.utils.StarkUtilsConstants
@@ -22,6 +23,9 @@ import scala.collection.mutable.ArrayBuffer
 private[services] object RegionServerData extends LoggerSupport{
   @volatile
   var regionServerResources = Map[String, ResourceDefinition]()
+  //create document source
+  val documentSource = new DocumentSourceImpl(new java.util.HashMap[String, DocumentCreator]())
+
   def addResources(zkw:ZooKeeperWatcher,resources:util.List[String]): Unit ={
     if(resources != null) {
       val it = resources.iterator()

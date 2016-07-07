@@ -7,9 +7,7 @@ import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.document.{Field, StringField}
 import roar.hbase.model.ResourceDefinition.ResourceProperty
-import roar.hbase.model.{AnalyzerCreator, DataColumnType, IndexType}
-import roar.hbase.services.RoarHbaseExceptionCode
-import stark.utils.services.StarkException
+import roar.hbase.model.{AnalyzerCreator, DataColumnType}
 
 /**
  * string column type
@@ -31,13 +29,7 @@ class KeyColumnType extends DataColumnType[String]{
         value
   }
   override def createIndexField(value: String,cd:ResourceProperty):(Field,Option[Field]) = {
-    val f = cd.indexType match {
-      case IndexType.Keyword =>
-        new StringField(cd.name, value, Store.NO)
-      case other =>
-        throw new StarkException("index type %s unsupported".format(cd.indexType), RoarHbaseExceptionCode.INDEX_TYPE_NOT_SUPPORTED)
-    }
-    (f,None)
+    (new StringField(cd.name, value, Store.NO),None)
   }
   def setIndexValue(f:(Field,Option[Field]),value:String,cd:ResourceProperty){
     //TODO 此处频繁创建analyzer,

@@ -45,7 +45,7 @@ class IndexRegionObserver extends BaseRegionObserver
   }
   override def postPut(e: ObserverContext[RegionCoprocessorEnvironment], put: Put, edit: WALEdit, durability: Durability): Unit = {
 //    IndexSource.findIndex(e.getEnvironment.getRegionInfo.getRegionId).index(put.getFamilyCellMap)
-    index(put.getRow,put.getFamilyCellMap)
+    index(put)
     mybeRefresh()
   }
 
