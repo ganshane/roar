@@ -1,15 +1,20 @@
 package roar.hbase.services
 
+import com.google.protobuf.ByteString
 import org.apache.hadoop.hbase.client.Get
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.document.Document
 import org.apache.lucene.index.IndexReader
-import org.apache.lucene.queryparser.classic.QueryParser
-import org.apache.lucene.search.{IndexSearcher, SearcherFactory, SearcherManager}
+import org.apache.lucene.search._
 import org.apache.lucene.util.BytesRef
-import roar.hbase.RoarHbaseConstants
-import roar.hbase.internal.InternalIndexSearcher
+import org.apache.tapestry5.ioc.internal.util.InternalUtils
+import roar.hbase.internal.{InternalIndexSearcher, QueryParserSupport, SearcherManagerSupport}
+import roar.hbase.model.ColumnType
+import roar.hbase.model.ResourceDefinition.ResourceProperty
+import roar.protocol.generated.RoarProtos.SearchResponse
 import stark.utils.services.LoggerSupport
+
+import scala.annotation.tailrec
 
 /**
   * region search support
@@ -17,40 +22,106 @@ import stark.utils.services.LoggerSupport
   * @author <a href="mailto:jcai@ganshane.com">Jun Tsai</a>
   * @since 2016-07-06
   */
-trait RegionSearchSupport {
+trait RegionSearchSupport extends QueryParserSupport with SearcherManagerSupport{
   this:RegionIndexSupport with LoggerSupport with RegionCoprocessorEnvironmentSupport =>
   private var searcherManagerOpt:Option[SearcherManager] = None
 
+
+  //全局搜索对象
+  override protected def getSearcherManager: SearcherManager = searcherManagerOpt.get
+
   protected def openSearcherManager(): Unit = {
     searcherManagerOpt = indexWriterOpt.map(new SearcherManager(_,new SearcherFactory(){
+
+      initQueryParser(rd)
+
       override def newSearcher(reader: IndexReader, previousReader: IndexReader): IndexSearcher = {
         new InternalIndexSearcher(reader,rd,null)
       }
     }))
   }
-  def search(q:String,offset:Int=0,limit:Int=30): scala.List[Document]={
-    val resultOpt = searcherManagerOpt map { searcherManager =>
-      var searcher: IndexSearcher = null
-      try {
-        searcher = searcherManager.acquire()
-        println("max doc:" + searcher.getIndexReader.maxDoc())
-        val parser = new QueryParser("id", RoarHbaseConstants.defaultAnalyzer)
-        val query = parser.parse(q)
-        val docs = searcher.search(query, offset + limit)
-        if (docs.scoreDocs.length > offset) {
-          docs.scoreDocs.drop(offset).map { scoreDoc =>
-            convert(searcher.asInstanceOf[InternalIndexSearcher].rowId(scoreDoc.doc))
-          }.toList
-        } else Nil
-      } finally {
-        searcherManager.release(searcher)
+  def search(q:String,sortStr: String, topN: Int=30): Option[SearchResponse] ={
+    searcherManagerOpt map { searcherManager =>
+      logger.info("[{}] \"{}\" sort:\"{}\" searching .... ", Array[AnyRef](rd.name, q, sortStr))
+      val query = parseQuery(q)
+      //sort
+      var sortOpt: Option[Sort] = None
+      if (!InternalUtils.isBlank(sortStr)) {
+        val it = rd.properties.iterator()
+        sortOpt = sortStr.trim.split("\\s+").toList match {
+          case field :: "asc" :: Nil =>
+            createSortField(field, false, it)
+          case field :: Nil =>
+            createSortField(field, false, it)
+          case field :: "desc" :: Nil =>
+            createSortField(field, true, it)
+          case o =>
+            None
+        }
+      }
+
+      doInSearcher { searcher =>
+        val startTime = System.currentTimeMillis()
+        val booleanQuery = new BooleanQuery.Builder
+        booleanQuery.add(query, BooleanClause.Occur.MUST)
+
+        val topDocs = sortOpt match {
+          case Some(sort) =>
+            searcher.search(booleanQuery.build(), topN, sort)
+          case None =>
+            searcher.search(booleanQuery.build(), topN)
+        }
+
+        //searcher.search(query, filter,collector)
+        //val topDocs = collector.topDocs(topN)
+        //val topDocs = searcher.search(query, filter, topN,sort)
+        val endTime = System.currentTimeMillis()
+        logger.info("[{}] q:{},time:{}ms,hits:{}",
+          Array[Object](rd.name, q,
+            (endTime - startTime).asInstanceOf[Object],
+            topDocs.totalHits.asInstanceOf[Object]))
+        val responseBuilder = SearchResponse.newBuilder()
+        responseBuilder.setCount(topDocs.totalHits)
+        responseBuilder.setTotal(searcher.getIndexReader.numDocs())
+        responseBuilder.setMaxScore((topDocs.getMaxScore * 10000).asInstanceOf[Int])
+
+        topDocs.scoreDocs.foreach { scoreDoc =>
+          val rowBuilder = responseBuilder.addRowBuilder()
+          val rowId = searcher.rowId(scoreDoc.doc)
+          rowBuilder.setRowId(ByteString.copyFrom(rowId.bytes, rowId.offset, rowId.length))
+          rowBuilder.setScore(scoreDoc.score)
+        }
+
+        responseBuilder.build()
       }
     }
-    resultOpt getOrElse Nil
+
   }
   protected def mybeRefresh(): Unit ={
     searcherManagerOpt.foreach(_.maybeRefresh)
   }
+  @tailrec
+  private def createSortField(sort:String,reverse:Boolean,it:java.util.Iterator[ResourceProperty]): Option[Sort] ={
+    if(it.hasNext){
+      val property = it.next()
+      if(property.name == sort){
+        property.columnType match{
+          case ColumnType.Long | ColumnType.Date =>
+            Some(new Sort(new SortField(sort,SortField.Type.LONG,reverse)))
+          case ColumnType.Int =>
+            Some(new Sort(new SortField(sort,SortField.Type.INT,reverse)))
+          case other=>
+            logger.error("{} sort unsupported ",sort)
+            None
+        }
+      }else{
+        createSortField(sort,reverse,it)
+      }
+    }else{
+      None
+    }
+  }
+
   private def convert(rowBin:BytesRef):Document= {
     val row = new Array[Byte](rowBin.length)
     System.arraycopy(rowBin.bytes,rowBin.offset,row,0,row.length)

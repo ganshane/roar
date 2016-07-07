@@ -15,8 +15,12 @@ import org.slf4j.LoggerFactory
 import roar.hbase.RoarHbaseConstants
 import roar.hbase.model.{ColumnType, ResourceDefinition, AnalyzerCreator}
 import roar.hbase.model.ResourceDefinition.ResourceProperty
+import roar.hbase.services.RoarHbaseExceptionCode
+import stark.utils.services.StarkException
 import scala.collection.JavaConversions._
 import roar.hbase.services.ResourceDefinitionConversions._
+
+import scala.util.control.NonFatal
 
 /**
  * 查询分析器支持
@@ -141,5 +145,15 @@ trait QueryParserSupport {
     //		parser.setEnablePositionIncrements(true)
 
     parser
+  }
+  protected def parseQuery(q: String) = {
+    val parser = createParser()
+    try {
+      parser.parse(q)
+    } catch {
+      case NonFatal(e) =>
+        logger.error(e.toString)
+        throw new StarkException("fail to parse:[" + q + "]", RoarHbaseExceptionCode.FAIL_TO_PARSE_QUERY)
+    }
   }
 }

@@ -79,6 +79,7 @@ class IndexRegionObserverTest extends LoggerSupport{
     request.setQ("xm:xm")
     val response = service.query(null,request.build())
     Assert.assertEquals(1,response.getCount)
+    Assert.assertArrayEquals(row1,response.getRow(0).getRowId.toByteArray)
 
     t.close()
   }
