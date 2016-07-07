@@ -26,8 +26,6 @@ class ResourceDefinitionParserTest {
     Assert.assertEquals("czrk", rd.name)
     Assert.assertEquals("常住人口", rd.cnName)
 
-    Assert.assertNotNull(rd.sync.jdbc)
-    Assert.assertEquals("org.h2.Driver", rd.sync.jdbc.driver)
 
     Assert.assertNotNull(rd.index)
 

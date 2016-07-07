@@ -55,7 +55,6 @@ class IndexRegionObserverTest extends LoggerSupport{
     }
     debug("resource loaded for path:{}",resPath)
 
-
     val admin = util.getHBaseAdmin()
     if (admin.tableExists(tableName)) {
       if (admin.isTableEnabled(tableName)) {
