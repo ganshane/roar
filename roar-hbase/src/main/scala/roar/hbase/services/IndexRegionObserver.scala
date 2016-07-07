@@ -38,13 +38,10 @@ class IndexRegionObserver extends BaseRegionObserver
   }
 
   override def postClose(e: ObserverContext[RegionCoprocessorEnvironment], abortRequested: Boolean): Unit = {
-    logger.info("closing index writer...")
     closeSearcher()
     closeIndex()
-//    IndexSource.findIndex(e.getEnvironment.getRegionInfo.getRegionId).close()
   }
   override def postPut(e: ObserverContext[RegionCoprocessorEnvironment], put: Put, edit: WALEdit, durability: Durability): Unit = {
-//    IndexSource.findIndex(e.getEnvironment.getRegionInfo.getRegionId).index(put.getFamilyCellMap)
     index(put)
     mybeRefresh()
   }

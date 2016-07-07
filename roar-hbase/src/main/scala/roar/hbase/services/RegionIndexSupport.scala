@@ -1,5 +1,7 @@
 package roar.hbase.services
 
+import java.io.File
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase.client.Put
@@ -7,6 +9,7 @@ import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.util.FSUtils
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.index._
+import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.util.BytesRef
 import org.apache.solr.store.hdfs.HdfsDirectory
 import roar.hbase.RoarHbaseConstants
@@ -41,7 +44,12 @@ trait RegionIndexSupport {
         val indexPath = new Path(tableDir, regionIndexPath)
         logger.info("create index with path {}", indexPath)
 
-        val directory = new HdfsDirectory(indexPath, HdfsLockFactoryInHbase, conf)
+        val directory =
+        if(indexPath.toString.startsWith("file"))
+          FSDirectory.open(new File(indexPath.toUri).toPath)
+        else
+         new HdfsDirectory(indexPath, HdfsLockFactoryInHbase, conf)
+
         val config = new IndexWriterConfig(RoarHbaseConstants.defaultAnalyzer)
         val mergePolicy = new LogByteSizeMergePolicy()
         // compound files cannot be used with HDFS
@@ -69,7 +77,10 @@ trait RegionIndexSupport {
     indexWriterOpt.foreach(_.commit())
   }
   protected def closeIndex():Unit={
-    indexWriterOpt.foreach(IOUtils.closeStream)
+    indexWriterOpt.foreach{indexWriter=>
+      logger.info("closing index writer...")
+      IOUtils.closeStream(indexWriter)
+    }
   }
 }
 
