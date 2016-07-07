@@ -48,15 +48,13 @@ class IndexRegionObserverRestoreTest {
     tableDesc.addFamily(colFamilyDesc)
 //    tableDesc.addCoprocessor(classOf[IndexRegionObserver].getName)
 
-    val hbasedir="target/xx"
+    val hbaseRootDir = FSUtils.getRootDir(conf);
     val regionInfo = new HRegionInfo(tableName, null, null, false);
-    val regionPath = new Path("target/xx")
-    region = HBaseTestingUtility.createRegionAndWAL(regionInfo, regionPath, conf, tableDesc);
+    region = HBaseTestingUtility.createRegionAndWAL(regionInfo, hbaseRootDir, conf, tableDesc);
     HBaseTestingUtility.closeRegionAndWAL(region);
 
 
     val fs = TEST_UTIL.getDFSCluster().getFileSystem();
-    val hbaseRootDir = FSUtils.getRootDir(conf);
     val oldLogDir = new Path(hbaseRootDir, HConstants.HREGION_OLDLOGDIR_NAME);
     val logName = DefaultWALProvider.getWALDirectoryName("restore-manual");
     val logDir = new Path(hbaseRootDir, "asdf");
