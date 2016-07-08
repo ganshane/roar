@@ -6,12 +6,14 @@ import junit.framework.Assert._
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client._
+import org.apache.hadoop.hbase.client.coprocessor.Batch.{Call, Callback}
 import org.apache.hadoop.hbase.coprocessor.CoprocessorHost
+import org.apache.hadoop.hbase.ipc.{BlockingRpcCallback, ServerRpcController}
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.zookeeper.ZKUtil
 import org.junit.{After, Assert, Before, Test}
 import roar.hbase.RoarHbaseConstants
-import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest}
+import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
 import stark.utils.services.LoggerSupport
 
 /**
@@ -73,10 +75,31 @@ class IndexRegionObserverIntegrationTest extends LoggerSupport{
     // before HBASE-4331, this would throw an exception
     t.put(p)
 
-    val channel = t.coprocessorService(row1)
-    val service = IndexSearchService.newBlockingStub(channel)
     val request = SearchRequest.newBuilder()
     request.setQ("xm:xm")
+
+    //test proxy on region server
+    var list = List[SearchResponse]()
+    t.coprocessorService(classOf[IndexSearchService],null,null,
+      new Call[IndexSearchService,SearchResponse](){
+        override def call(instance: IndexSearchService): SearchResponse = {
+          val controller: ServerRpcController = new ServerRpcController
+          val rpcCallback  = new BlockingRpcCallback[SearchResponse]
+          instance.query(controller,request.build(),rpcCallback)
+          if (controller.failedOnException) {
+            throw controller.getFailedOn
+          }
+          rpcCallback.get
+        }
+      },new Callback[SearchResponse] {
+        override def update(region: Array[Byte], row: Array[Byte], result: SearchResponse): Unit = {
+          list = result :: list
+        }
+      })
+    Assert.assertEquals(1,list.size)
+
+    val channel = t.coprocessorService(row1)
+    val service = IndexSearchService.newBlockingStub(channel)
     val response = service.query(null,request.build())
     Assert.assertEquals(1,response.getCount)
     Assert.assertArrayEquals(row1,response.getRow(0).getRowId.toByteArray)
