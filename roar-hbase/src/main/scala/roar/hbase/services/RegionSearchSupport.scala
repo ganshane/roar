@@ -1,13 +1,13 @@
 package roar.hbase.services
 
 import com.google.protobuf.ByteString
+import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.hbase.client.Get
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.document.Document
 import org.apache.lucene.index.IndexReader
 import org.apache.lucene.search._
 import org.apache.lucene.util.BytesRef
-import org.apache.tapestry5.ioc.internal.util.InternalUtils
 import roar.hbase.internal.{InternalIndexSearcher, QueryParserSupport, SearcherManagerSupport}
 import roar.hbase.model.ColumnType
 import roar.hbase.model.ResourceDefinition.ResourceProperty
@@ -46,7 +46,7 @@ trait RegionSearchSupport extends QueryParserSupport with SearcherManagerSupport
       val query = parseQuery(q)
       //sort
       var sortOpt: Option[Sort] = None
-      if (!InternalUtils.isBlank(sortStr)) {
+      if (StringUtils.isNotBlank(sortStr)) {
         val it = rd.properties.iterator()
         sortOpt = sortStr.trim.split("\\s+").toList match {
           case field :: "asc" :: Nil =>
