@@ -1,12 +1,12 @@
 package roar.hbase.services
 
 import org.apache.hadoop.hbase.client.{Delete, Durability, Get, Put}
-import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, ObserverContext, RegionCoprocessorEnvironment}
+import org.apache.hadoop.hbase.coprocessor.{CoprocessorException, BaseRegionObserver, ObserverContext, RegionCoprocessorEnvironment}
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit
 import org.apache.hadoop.hbase.regionserver.{Region, Store, StoreFile}
 import org.apache.hadoop.hbase.wal.WALKey
-import org.apache.hadoop.hbase.{CellUtil, HRegionInfo}
+import org.apache.hadoop.hbase.{CoprocessorEnvironment, CellUtil, HRegionInfo}
 import stark.utils.services.LoggerSupport
 
 /**
@@ -27,7 +27,6 @@ class IndexRegionObserver extends BaseRegionObserver
   override def coprocessorEnv: RegionCoprocessorEnvironment = _env
 
   override def postOpen(e: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
-    _env = e.getEnvironment
     openIndexWriter()
     openSearcherManager()
   }
@@ -100,6 +99,15 @@ class IndexRegionObserver extends BaseRegionObserver
     awaitSplitIndexComplete(l,r)
   }
 
+
   override def postCompleteSplit(ctx: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
+  }
+  override def start(e: CoprocessorEnvironment): Unit = {
+    e match{
+      case re: RegionCoprocessorEnvironment=>
+        _env=re
+      case _ =>
+        throw new CoprocessorException("Must be loaded on a table region!")
+    }
   }
 }

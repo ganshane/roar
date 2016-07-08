@@ -3,7 +3,7 @@ package roar.hbase.services
 import java.util
 
 import org.apache.hadoop.hbase.CoprocessorEnvironment
-import org.apache.hadoop.hbase.coprocessor.{BaseRegionServerObserver, RegionServerCoprocessorEnvironment}
+import org.apache.hadoop.hbase.coprocessor.{CoprocessorException, BaseRegionServerObserver, RegionServerCoprocessorEnvironment}
 import org.apache.hadoop.hbase.zookeeper.{ZKUtil, ZooKeeperListener, ZooKeeperWatcher}
 import roar.hbase.RoarHbaseConstants
 import roar.hbase.internal.DocumentSourceImpl
@@ -82,17 +82,22 @@ private[services] object RegionServerData extends LoggerSupport{
 }
 class IndexRegionServerObserver extends BaseRegionServerObserver with LoggerSupport{
   override def start(env: CoprocessorEnvironment): Unit = {
-    debug("start region server coprocessor")
-    val rss = env.asInstanceOf[RegionServerCoprocessorEnvironment].getRegionServerServices
-    val zkw = rss.getZooKeeper
-    zkw.registerListener(new ResourceListener(zkw))
-    debug("watching {}",RoarHbaseConstants.RESOURCES_PATH)
-    while(ZKUtil.checkExists(zkw,RoarHbaseConstants.RESOURCES_PATH) == -1){
-      ZKUtil.createWithParents(zkw,RoarHbaseConstants.RESOURCES_PATH)
-    }
+    env match {
+      case rssEnv: RegionServerCoprocessorEnvironment =>
+        debug("start region server coprocessor")
+        val rss = rssEnv.getRegionServerServices
+        val zkw = rss.getZooKeeper
+        zkw.registerListener(new ResourceListener(zkw))
+        debug("watching {}", RoarHbaseConstants.RESOURCES_PATH)
+        while (ZKUtil.checkExists(zkw, RoarHbaseConstants.RESOURCES_PATH) == -1) {
+          ZKUtil.createWithParents(zkw, RoarHbaseConstants.RESOURCES_PATH)
+        }
 
-    val resources = ZKUtil.listChildrenAndWatchThem(zkw,RoarHbaseConstants.RESOURCES_PATH)
-    RegionServerData.addResources(zkw,resources)
-    debug("finish start region server coprocessor,resource size:{}",RegionServerData.regionServerResources.size)
+        val resources = ZKUtil.listChildrenAndWatchThem(zkw, RoarHbaseConstants.RESOURCES_PATH)
+        RegionServerData.addResources(zkw, resources)
+        debug("finish start region server coprocessor,resource size:{}", RegionServerData.regionServerResources.size)
+      case _ =>
+        throw new CoprocessorException("Must be loaded on a region server!")
+    }
   }
 }
