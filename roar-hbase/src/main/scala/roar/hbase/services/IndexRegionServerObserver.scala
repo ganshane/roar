@@ -23,8 +23,6 @@ import scala.collection.mutable.ArrayBuffer
 private[services] object RegionServerData extends LoggerSupport{
   @volatile
   var regionServerResources = Map[String, ResourceDefinition]()
-  @volatile
-  var resourcesZkPath:String = _
   //create document source
   val documentSource = new DocumentSourceImpl(new java.util.HashMap[String, DocumentCreator]())
 
@@ -34,7 +32,7 @@ private[services] object RegionServerData extends LoggerSupport{
       val buffer = new ArrayBuffer[ResourceDefinition](resources.size())
       while (it.hasNext) {
         val res = it.next()
-        val resPath = ZKUtil.joinZNode(resourcesZkPath, res)
+        val resPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_PATH, res)
         val data = ZKUtil.getDataAndWatch(zkw, resPath)
         val rdOpt = parseXML(data)
         rdOpt.foreach(buffer +=)
@@ -60,8 +58,8 @@ private[services] object RegionServerData extends LoggerSupport{
   }
   class ResourceListener(zkw:ZooKeeperWatcher) extends ZooKeeperListener(zkw) {
     override def nodeChildrenChanged(path: String): Unit = {
-      if(path == resourcesZkPath){
-        val resources = ZKUtil.listChildrenAndWatchThem(zkw,resourcesZkPath)
+      if(path == RoarHbaseConstants.RESOURCES_PATH){
+        val resources = ZKUtil.listChildrenAndWatchThem(zkw,RoarHbaseConstants.RESOURCES_PATH)
         addResources(zkw,resources)
         debug("resources:{} children changed,children:{},size:{}",path,resources,regionServerResources.size)
       }
@@ -69,7 +67,7 @@ private[services] object RegionServerData extends LoggerSupport{
 
     //called when resource definition changed
     override def nodeDataChanged(path: String): Unit = {
-      if(path.startsWith(resourcesZkPath)){
+      if(path.startsWith(RoarHbaseConstants.RESOURCES_PATH)){
         debug("resource content changed:{}",path)
         val data = ZKUtil.getData(zkw,path)
         val rdOpt = parseXML(data)
@@ -87,22 +85,15 @@ class IndexRegionServerObserver extends BaseRegionServerObserver with LoggerSupp
     env match {
       case rssEnv: RegionServerCoprocessorEnvironment =>
         debug("start region server coprocessor")
-        var resourcesPath = rssEnv.getConfiguration.get(RoarHbaseConstants.ROAR_RESOURCES_ZK_PATH_CONF_KEY)
-        if(resourcesPath == null){
-          warn("not config resources path,using default path :"+RoarHbaseConstants.RESOURCES_DEFAULT_PATH)
-          resourcesPath = RoarHbaseConstants.RESOURCES_DEFAULT_PATH
-        }
-        RegionServerData.resourcesZkPath = resourcesPath
-        
         val rss = rssEnv.getRegionServerServices
         val zkw = rss.getZooKeeper
         zkw.registerListener(new ResourceListener(zkw))
-        debug("watching {}", resourcesPath)
-        while (ZKUtil.checkExists(zkw, resourcesPath) == -1) {
-          ZKUtil.createWithParents(zkw, resourcesPath)
+        debug("watching {}", RoarHbaseConstants.RESOURCES_PATH)
+        while (ZKUtil.checkExists(zkw, RoarHbaseConstants.RESOURCES_PATH) == -1) {
+          ZKUtil.createWithParents(zkw, RoarHbaseConstants.RESOURCES_PATH)
         }
 
-        val resources = ZKUtil.listChildrenAndWatchThem(zkw, resourcesPath)
+        val resources = ZKUtil.listChildrenAndWatchThem(zkw, RoarHbaseConstants.RESOURCES_PATH)
         RegionServerData.addResources(zkw, resources)
         debug("finish start region server coprocessor,resource size:{}", RegionServerData.regionServerResources.size)
       case _ =>

@@ -37,6 +37,8 @@ trait RegionIndexSupport {
   private var splitterOpt:Option[Future[Unit]] = _
 
   protected def openIndexWriter():Unit= {
+    val enableIndex = coprocessorEnv.getRegion.getTableDesc.getConfigurationValue(RoarHbaseConstants.ENABLE_ROAR_INDEX_CONF_KEY)
+    debug("=====> enableIndex",enableIndex)
     val tableName = coprocessorEnv.getRegion.getTableDesc.getTableName
     val regionEncodedName = coprocessorEnv.getRegionInfo.getEncodedName
     val resourceDefineOpt = RegionServerData.regionServerResources.get(tableName.getNameAsString)
