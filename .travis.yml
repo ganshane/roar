@@ -4,14 +4,28 @@ cache:
   - $HOME/.m2/repository
   - $HOME/protobuf
 before_cache:
-- rm -rf $HOME/.m2/repository/com/ganshane/stark
+- rm -rf $HOME/.m2/repository/com/ganshane/roar
 - find $HOME/.m2 -name "resolver-status.properties" | xargs rm
 language: java
-before_script:
-  - export VERSION=`cat pom.xml|grep -e '<version>\(.*\)</version>'|head -n 1|sed  's/^.*<version>\(.*\)<\/version>/\1/g'`
-  - echo $VERSION
+env:
+  global:
+  - secure: xNAzS56qIsQ0EK/MvgLCQfMcyrtR0ZY1ltean2LbBUoz8vaoIB23j8sSrf9wAgy+RhFf6Dby7hiWM4PvZHjDCOvjf2onVMbBr/g+QLEe/+cho1cTOd5QJCSy97AZIGwkqeRNh1VntggZ9OdtbpIz234EkEmFrtz/w8v3pPh05ahzgrgoQra3xeGt5zscIZ/z56TpSsrNGDFYGAaTs8aX5a4uwvxy2sanmPUoHDXT9XGtVAD49jQtNys32RlL4wHJqgI1joFKHX/YkdXZMUTl/HelLFKaj3Z5pnTjvDnEXNv7HKzlIfEjAvYWmFakxw7cmxjGNDp3laYDxvxhovgt69qXREEIH4vaJDTBN9UG8t4/XoDLvEd401P+w0OqLzqDZ1IzAefFwsgggH5llLFBYDnzoJBXNti2yu1Z3jcJ0LFXZYm89sANCnwCmYPPl+uLmutM5WCh8R4LTBKft1rNin4tOdpQ/5RQVzxsybIaUyw4ILgIQLrSE1Vth5ebQ/pwMajGXgx5bhjazmq4/smsTi6mcoFx2xt2hzbThDUlsKitl5iJFVVnQYUQfr+OAjfXJRVGpHK+XO/0mA7Wr2R3bcHULeuKogkk4mqRQJeLpZZq2o+7OtHfzNnr5Fmg7pFhfGxJGvppSZonqh8dVoY3Y1k0rNZB5PEFgyC7YjeR/9w=
+  - secure: cJCg0wS46nQpCBe5MIVhgw+8oL0Yc7tMxr0UJIP8aewtb3k9CxBk6tQXhs4bK1lNa6qj33o+d40O1aG6GM3KJw4ngNoXP5Gnaq/foGdiSq+ZQkX0XmuGI0ibQ1EBaCFk1w0kbTOoDDdVR+exi07SgYC/+/f3pZfo9M0B+5Tz62SnH7tA2TLyE7SZ5y39gjz6ss+bvSM10jLQLmnDsYFt9vhWSfngPKa+g+kKT0c+8BqcogYeO9D1izUdBjRcKTUs1WEneSvwxbwDOxw5bgrxVuZ/4Ckw+Lb+ArzpnLJ+u0UAXUStaEKoF4X2MeE4S+fh4J187tAV/Mq099q6E3a9K16UDafMp5QAm8nxiaPqPVvnN7G5Ygd/9hH+TMR1EY8ZWJCJB3Chv2dgIFF6eqJzCIZ0CqTIEKiSpD4CMakNv6glLH0ZA7PgxKd8omN0C++EjyPVMyyHA1pqNi4V2mtghrh04ov0BGHMN0xeJCmmegAwAe5TsUWMDwXBenM3tQc3jYQegucLQEYCHZ2Mw3bI+0lzrtA4duzWGpmU+q1+pCS+h4Xp+6f0YmdC+JYMwcxCBaSEPemEjqti5YBZJmdx7SmvCdmZC/MGsQKkECZwpFXmRYwFu8/OainlI8Pe0GfZeyOdAENc/fSmMRFW+2nuDjRmUxQvRVLkR8isQMSiZk8=
+  - secure: ywq95QtyuUZoSkGaTGJDLi9ebdhfndiiLZRKWIQX4gTjxEOf0PRj6ultUXMWBPA3RvTzlMeiNEry5P7r4iH2v+e+phrK8apz9vl0X4Toaz01Hqizy8BHBNF2gm1h185IfxyQCYhtwV+5ZhJo8mBvLGXchK4yBHPUfjuaswQvYIM2TMihCBFi82ioJZaYQhFEkDfosLcuSWZpWgcjElEi0iJZIc9OvsVf6RiDsLPTugYwOYSL7dbj2szvpocTTJe9RYvm6NSgSbsfMV4qCjT8PNy0LYPmUhMAY1NJdSPURDxVd0kPreSvTDK1UMmEY0JasLsM+kowYRSxrZhaA38+JBwwiFt3BhHOunpAH0Vl7rAZzeQRl0ECLkVlJ56wxGJ3/N4JrlNWXpI5qWP3m77IgCDDU/sHa7XWFERIb7K3JdQY4dK9kHhHZy//kraXb8++6IBEYHmj5u2vzM6W9K3ApU5kQYfXLmk4ky7wsLDGpJGMbjJ9G0M598KZc2MkW6f9fqBx5VgoJdrcmHeYlZSvlZY+/Dc+fPy9uy8x7sEnL3D3XweA+sbeynhKIEzWFWXc3+gwjbYKDyuXdsjDJyapXDwX64qm5bq+e5PuEoIYL6xKZ65HULMcbUkrMh3z94aANrXjZBb9oXUWW4M88Ei6128FQpDyxbtPHNxTKu7Cg0Y=
+  - secure: sf/IFyM1GEgL4JwOWT03fzDbp+FQr/7+Svz7sp+0SS7zfNVUBExKTRrrCO7ZlRUsUXxVf8NdrSrfmmglyUozNk0gUk9I3d1SHBUOix9jZUS5o6XqiVU1Ep7/pzt6Zt5y2SN+D2khoVPblBTEvZS9+WTM5Bl5YDlJR/QbHNiIqeE2Kij4vTgD+o3YtcSs5BM6/ynAZOR4C3YP9jeLyMwVmM4hLI1LwizaA4cZ8TaoPhtJ8bm4zM1l6NPjtLN+fWC1HxjIvPMBsID/11qU22qKLGpL3qlOAn3O8P2zUSn2JqZxm5vPBcG5CO7Z/F/MMfTNFBxZM4sSOa33ZDIKbALk/WbSPakzfnIa/q02YfeQtVk2DXAP/btyDRiw1svE4OxeXcVuhyfgv3pruovkA/lgMCZuGs1rGcEcaQTiSy9J7FT9CO28aqk5lrAA7vTtc4BDDdmI6cl750Q3QgcYrunxYGs82bknwlpY9jeGJKv8UJoD3pGt/+JG3ZNS1oAXfYkl7dCtAOn+jcc+4bY0qfm7bsV14xWa6BFlP1AZZL20CIxoq2YS7eCwl7cGD0NbKgFK+ZBNTQrQpV/km8kDPR/buehp+L/bxA7UvbCXwHWoFQZjj/3F33881flvi2gTdjcQxpGvPqtX1RvDFnLKy4OVrXnr7gvyBBb5vILQNoyUKac=
+  - secure: 2pm3A5Of1j1N9Dqn56xn/xBYfFS8SKwBx3TFRXLaNlBOKSt/6nojpghlC946aqXZCKzGE6Ec+Y3IsxqHQRO4MIcDvNnmUe4eiZxxdAOlnMTWZBh2JFnfmjFGUpSkCD1X6GD9hsjSAIO1Itx1yPKkBABZJjP63gERXZy8tAU9WKQD6hB/02rQ8QfpXsf2eGz7eRD8uHWUICMW7tkIqaxOYUQS23+bvg7tOQBGzFnBVdDssrPYYITGTRDHdHNVvzrtPkJRez1omeiJJtdmHoOGw6+Fj6CeH0V/RCeiN85HVy5GiNnshAj4z40edXNcO83adzu4nwBI0lpojc7RFuNfc4g8VlnWv0VhX0gK5KP7Dt6GgtaiNl4UCufCpWeKxisUYhffL3bDbvLIjvr+jC3iDRsnshdQ8WqsxZ6oHLbJUcd0ULu8US99ojnUH64V0LGy66AnWVDLLpgNWA0D6QoZ4iZ5+sKUybsfRmjJixlcWpOBWgzNw22zjzCY5peykrwu6KOGjTY6RG5gVBhAIAid3490X6LjQyZJJpzpVxsoq3ij/7/DBi4JOp99v1Cn0J6UlYjmBHSKfD4QqmUdwP4RKth7QyUXL0keXcml8DDqu3ua/c4kfZG6CCSa7y8nHAuY0dgireoPOrZjtLIfjeh4JRJARaaoOoYUxKSztM9i0bo=
+  - GPG_DIR="`pwd`/support/deploy"
+  - MAVEN_OPTS="-XX:MaxPermSize=128m -Xmx1g -Xms1g"
 before_install:
 - bash support/scripts/install-protobuf.sh
 - export PATH=$PATH:$HOME/protobuf/bin
 jdk:
 - oraclejdk7
+install: true
+script:
+- protoc --version
+- mvn test
+after_success:
+- openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $GPG_DIR/pubring.gpg.enc -out $GPG_DIR/pubring.gpg -d
+- openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $GPG_DIR/secring.gpg.enc -out $GPG_DIR/secring.gpg -d
+- "$GPG_DIR/publish.sh"
