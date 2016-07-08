@@ -27,7 +27,7 @@ class IndexRegionServerObserverTest extends LoggerSupport{
   def test_res: Unit ={
     val zkw = util.getZooKeeperWatcher
     val bytes = IOUtils.toByteArray(getClass.getResourceAsStream("/test_res.xml"))
-    val resPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_PATH,"czrk")
+    val resPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_DEFAULT_PATH,"czrk")
     debug("resPath:{}",resPath)
     while(RegionServerData.regionServerResources.isEmpty){
       ZKUtil.createSetData(zkw,resPath,bytes)
@@ -38,7 +38,7 @@ class IndexRegionServerObserverTest extends LoggerSupport{
 
     //test wrong define resource
     val wrongRes = IOUtils.toByteArray(getClass.getResourceAsStream("/test_res_wrong.xml"))
-    val wrongResPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_PATH,"wrong_res")
+    val wrongResPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_DEFAULT_PATH,"wrong_res")
     ZKUtil.createSetData(zkw,wrongResPath,wrongRes)
 
     ZKUtil.deleteNode(zkw,resPath)
