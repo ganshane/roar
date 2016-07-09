@@ -44,17 +44,6 @@
         <artifactId>tapestry-json</artifactId>
         <version>${tapestry-release-version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.apache.tapestry</groupId>
-        <artifactId>tapestry-ioc</artifactId>
-        <version>${tapestry-release-version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
       <!-- hbase -->
       <dependency>
         <groupId>org.apache.hbase</groupId>
