@@ -3,7 +3,7 @@ package roar.api.services
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.coprocessor.Batch.{Call, Callback}
-import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory, Table}
+import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.ipc.{BlockingRpcCallback, ServerRpcController}
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.util.PriorityQueue
@@ -29,6 +29,52 @@ class RoarClient(conf:Configuration) {
     * @return search collection
     */
   def search(tableName:String, q: String,sortOpt:Option[String]=None,offset: Int=0, size: Int=30):SearchResponse ={
+    doInTable(tableName) { table =>
+      val searchRequestBuilder = SearchRequest.newBuilder()
+      searchRequestBuilder.setTableName(tableName)
+      searchRequestBuilder.setQ(q)
+      sortOpt.foreach(searchRequestBuilder.setSort)
+      searchRequestBuilder.setTopN(offset + size)
+
+      val searchRequest = searchRequestBuilder.build()
+
+      var list = List[SearchResponse]()
+      table.coprocessorService(classOf[IndexSearchService], null, null,
+        new Call[IndexSearchService, SearchResponse]() {
+          override def call(instance: IndexSearchService): SearchResponse = {
+            val controller: ServerRpcController = new ServerRpcController
+            val rpcCallback = new BlockingRpcCallback[SearchResponse]
+            instance.query(controller, searchRequest, rpcCallback)
+            val response = rpcCallback.get
+            if (controller.failedOnException) {
+              throw controller.getFailedOn
+            }
+            response
+          }
+        }, new Callback[SearchResponse] {
+          override def update(region: Array[Byte], row: Array[Byte], result: SearchResponse): Unit = {
+            list = result :: list
+          }
+        })
+      mergeAux(offset, size, list)
+    }
+  }
+
+  /**
+    * find Row Data from hbase
+    * @param tableName table name
+    * @param rowId row id
+    * @return result object
+    */
+  def findRow(tableName:String,rowId:Array[Byte]): Option[Result] ={
+    doInTable(tableName){table=>
+      val get = new Get(rowId)
+      val result = table.get(get)
+      if(result.isEmpty) None else Some(result)
+    }
+  }
+
+  private def doInTable[T](tableName:String)(tableAction:(Table)=>T):T={
     var conn:Connection = null
     try {
       //get connection
@@ -37,33 +83,7 @@ class RoarClient(conf:Configuration) {
       try{
         //find table
         table = conn.getTable(TableName.valueOf(tableName))
-        val searchRequestBuilder = SearchRequest.newBuilder()
-        searchRequestBuilder.setTableName(tableName)
-        searchRequestBuilder.setQ(q)
-        sortOpt.foreach(searchRequestBuilder.setSort)
-        searchRequestBuilder.setTopN(offset+size)
-
-        val searchRequest = searchRequestBuilder.build()
-
-        var list = List[SearchResponse]()
-        table.coprocessorService(classOf[IndexSearchService],null,null,
-          new Call[IndexSearchService,SearchResponse](){
-            override def call(instance: IndexSearchService): SearchResponse = {
-              val controller: ServerRpcController = new ServerRpcController
-              val rpcCallback  = new BlockingRpcCallback[SearchResponse]
-              instance.query(controller,searchRequest,rpcCallback)
-              val response = rpcCallback.get
-              if (controller.failedOnException) {
-                throw controller.getFailedOn
-              }
-              response
-            }
-          },new Callback[SearchResponse] {
-            override def update(region: Array[Byte], row: Array[Byte], result: SearchResponse): Unit = {
-              list = result :: list
-            }
-          })
-        mergeAux(offset,size,list)
+        tableAction(table)
       }finally{
         table.close()
       }
@@ -71,7 +91,6 @@ class RoarClient(conf:Configuration) {
       IOUtils.closeStream(conn)
     }
   }
-
   private class ShardRef(val shardIndex:Int) {
     var hitIndex: Int = 0
     override def toString: String = {
