@@ -18,7 +18,16 @@ import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, Se
   */
 class RoarClient(conf:Configuration) {
 
-
+  /**
+    * call full text search to hbase cluster
+    *
+    * @param tableName table name searched
+    * @param q query text
+    * @param sortOpt sort option
+    * @param offset offset in collection
+    * @param size fetch size
+    * @return search collection
+    */
   def search(tableName:String, q: String,sortOpt:Option[String]=None,offset: Int=0, size: Int=30):SearchResponse ={
     var conn:Connection = null
     try {
