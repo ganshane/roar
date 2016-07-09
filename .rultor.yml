@@ -6,4 +6,4 @@ release:
     mvn versions:set "-DnewVersion=${tag}"
     git commit -am "release ${tag}"
   commanders:
-	- jcai
+    - jcai
