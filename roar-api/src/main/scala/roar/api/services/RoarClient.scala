@@ -1,9 +1,10 @@
 package roar.api.services
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.coprocessor.Batch.{Call, Callback}
 import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory, Table}
 import org.apache.hadoop.hbase.ipc.{BlockingRpcCallback, ServerRpcController}
-import org.apache.hadoop.hbase.{HBaseConfiguration, TableName}
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.util.PriorityQueue
 import roar.protocol.generated.RoarProtos.SearchResponse.Row
@@ -15,7 +16,7 @@ import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, Se
   * @author <a href="mailto:jcai@ganshane.com">Jun Tsai</a>
   * @since 2016-07-09
   */
-class RoarClient(conf:HBaseConfiguration) {
+class RoarClient(conf:Configuration) {
 
 
   def search(tableName:String, q: String,sortOpt:Option[String]=None,offset: Int=0, size: Int=30):SearchResponse ={
@@ -95,7 +96,7 @@ class RoarClient(conf:HBaseConfiguration) {
     }
   }
 
-  private def mergeAux(start: Int, size: Int, shardHits: List[SearchResponse]):SearchResponse={
+  private[services] def mergeAux(start: Int, size: Int, shardHits: List[SearchResponse]):SearchResponse={
     val queue: PriorityQueue[ShardRef] = new ScoreMergeSortQueue(shardHits)
     var totalHitCount: Int = 0
     var totalRecordNum:Int = 0
@@ -131,8 +132,8 @@ class RoarClient(conf:HBaseConfiguration) {
       while (hitUpto < numIterOnHits) {
         assert(queue.size > 0)
         val ref = queue.top
-        ref.hitIndex += 1
         val hit = shardHits(ref.shardIndex).getRow(ref.hitIndex)
+        ref.hitIndex += 1
 
 //        hit.shardIndex = ref.shardIndex
 
