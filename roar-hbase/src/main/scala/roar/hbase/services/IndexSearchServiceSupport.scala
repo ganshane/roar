@@ -13,7 +13,8 @@ trait IndexSearchServiceSupport extends CoprocessorService {
   this:RegionSearchSupport =>
   private val service = new IndexSearchService {
     override def query(controller: RpcController, request: SearchRequest, done: RpcCallback[SearchResponse]): Unit = {
-      val responseOpt = search(request.getQ, request.getSort, request.getTopN)
+      val sortOpt = if(request.hasSort) Some(request.getSort) else None
+      val responseOpt = search(request.getQ, sortOpt, request.getTopN)
       responseOpt match{
         case Some(response)=>
           done.run(response)

@@ -1,7 +1,6 @@
 package roar.hbase.services
 
 import com.google.protobuf.ByteString
-import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.hbase.client.Get
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.document.Document
@@ -40,13 +39,15 @@ trait RegionSearchSupport extends QueryParserSupport with SearcherManagerSupport
       }
     }))
   }
-  def search(q:String,sortStr: String, topN: Int=30): Option[SearchResponse] ={
+  def search(q:String,sortStringOpt: Option[String]=None, topN: Int=30): Option[SearchResponse] ={
     searcherManagerOpt map { searcherManager =>
-      logger.info("[{}] \"{}\" sort:\"{}\" searching .... ", Array[AnyRef](rd.name, q, sortStr))
+      logger.info("[{}] \"{}\" sort:\"{}\" searching .... ", Array[AnyRef](rd.name, q, sortStringOpt))
       val query = parseQuery(q)
       //sort
       var sortOpt: Option[Sort] = None
-      if (StringUtils.isNotBlank(sortStr)) {
+
+      sortStringOpt match{
+        case Some(sortStr)=>
         val it = rd.properties.iterator()
         sortOpt = sortStr.trim.split("\\s+").toList match {
           case field :: "asc" :: Nil =>
@@ -58,6 +59,7 @@ trait RegionSearchSupport extends QueryParserSupport with SearcherManagerSupport
           case o =>
             None
         }
+        case _ =>
       }
 
       doInSearcher { searcher =>
@@ -83,7 +85,7 @@ trait RegionSearchSupport extends QueryParserSupport with SearcherManagerSupport
         val responseBuilder = SearchResponse.newBuilder()
         responseBuilder.setCount(topDocs.totalHits)
         responseBuilder.setTotal(searcher.getIndexReader.numDocs())
-        responseBuilder.setMaxScore((topDocs.getMaxScore * 10000).asInstanceOf[Int])
+        responseBuilder.setMaxScore(topDocs.getMaxScore)
 
         topDocs.scoreDocs.foreach { scoreDoc =>
           val rowBuilder = responseBuilder.addRowBuilder()

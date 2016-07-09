@@ -560,7 +560,7 @@
     <scala-binary-version>2.11</scala-binary-version>
     <metrics-release-version>3.1.0</metrics-release-version>
     <hawtio-release-version>1.4.19</hawtio-release-version>
-    <lucene-release-version>5.2.1</lucene-release-version>
+    <lucene-release-version>5.5.2</lucene-release-version>
     <proguard-release-version>5.1</proguard-release-version>
     <axis-release-version>1.6.4</axis-release-version>
     <spring-release-version>4.2.4.RELEASE</spring-release-version>

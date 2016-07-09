@@ -17,7 +17,7 @@ message SearchResponse {
   }
  required int32 count = 1;
  required int32 total = 2;
- required int32 max_score = 3;
+ required float max_score = 3;
  repeated Row row = 4;
 }
 service IndexSearchService{
