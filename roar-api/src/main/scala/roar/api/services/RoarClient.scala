@@ -6,6 +6,7 @@ import org.apache.hadoop.hbase.client.coprocessor.Batch.{Call, Callback}
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.ipc.{BlockingRpcCallback, ServerRpcController}
 import org.apache.hadoop.io.IOUtils
+import org.apache.lucene.search.{ScoreDoc, TopDocs}
 import org.apache.lucene.util.PriorityQueue
 import roar.protocol.generated.RoarProtos.SearchResponse.Row
 import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
@@ -56,12 +57,13 @@ class RoarClient(conf:Configuration) {
             list = result :: list
           }
         })
-      mergeAux(offset, size, list)
+      internalMerge(offset, size, list)
     }
   }
 
   /**
     * find Row Data from hbase
+    *
     * @param tableName table name
     * @param rowId row id
     * @return result object
@@ -90,6 +92,33 @@ class RoarClient(conf:Configuration) {
     }finally{
       IOUtils.closeStream(conn)
     }
+  }
+  private def internalMerge(offset:Int,size:Int,list:List[SearchResponse]):SearchResponse={
+    var shardIdx = 0
+    var totalRecordNum = 0
+    val docs = list.map{response=>
+      val rows = response.getRowList
+      val scoreDocs = Range(0,rows.size()).map{i=>
+        new ScoreDoc(i,rows.get(i).getScore,shardIdx)
+      }
+      val docs = new TopDocs(response.getCount,scoreDocs.toArray,response.getMaxScore)
+
+      shardIdx += 1
+      totalRecordNum += response.getTotal
+
+      docs
+    }
+    val result = TopDocs.merge(offset,size,docs.toArray)
+    val searchResponseBuilder = SearchResponse.newBuilder()
+    result.scoreDocs.foreach{scoreDoc=>
+      val row = list(scoreDoc.shardIndex).getRow(scoreDoc.doc)
+      searchResponseBuilder.addRow(row)
+    }
+    searchResponseBuilder.setCount(result.totalHits)
+    searchResponseBuilder.setMaxScore(result.getMaxScore)
+    searchResponseBuilder.setTotal(totalRecordNum)
+
+    searchResponseBuilder.build()
   }
   private class ShardRef(val shardIndex:Int) {
     var hitIndex: Int = 0
