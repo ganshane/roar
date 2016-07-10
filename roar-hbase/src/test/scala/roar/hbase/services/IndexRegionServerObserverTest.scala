@@ -4,8 +4,7 @@ import org.apache.commons.io.IOUtils
 import org.apache.hadoop.hbase.coprocessor.CoprocessorHost
 import org.apache.hadoop.hbase.zookeeper.ZKUtil
 import org.apache.hadoop.hbase.{HBaseConfiguration, HBaseTestingUtility}
-import org.junit.{Assert, After, Before, Test}
-import roar.hbase.RoarHbaseConstants
+import org.junit.{After, Assert, Before, Test}
 import stark.utils.services.LoggerSupport
 
 /**
@@ -27,7 +26,8 @@ class IndexRegionServerObserverTest extends LoggerSupport{
   def test_res: Unit ={
     val zkw = util.getZooKeeperWatcher
     val bytes = IOUtils.toByteArray(getClass.getResourceAsStream("/test_res.xml"))
-    val resPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_PATH,"czrk")
+    val resourcesPath = RegionServerData.resourcesPath
+    val resPath = ZKUtil.joinZNode(resourcesPath,"czrk")
     debug("resPath:{}",resPath)
     while(RegionServerData.regionServerResources.isEmpty){
       ZKUtil.createSetData(zkw,resPath,bytes)
@@ -38,7 +38,7 @@ class IndexRegionServerObserverTest extends LoggerSupport{
 
     //test wrong define resource
     val wrongRes = IOUtils.toByteArray(getClass.getResourceAsStream("/test_res_wrong.xml"))
-    val wrongResPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_PATH,"wrong_res")
+    val wrongResPath = ZKUtil.joinZNode(resourcesPath,"wrong_res")
     ZKUtil.createSetData(zkw,wrongResPath,wrongRes)
 
     ZKUtil.deleteNode(zkw,resPath)
