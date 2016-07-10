@@ -5,10 +5,11 @@ import java.io.File
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.hbase.HRegionInfo
 import org.apache.hadoop.hbase.client.{Delete, Result}
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.regionserver.Region
-import org.apache.hadoop.hbase.util.FSUtils
+import org.apache.hadoop.hbase.util.{CancelableProgressable, EnvironmentEdgeManager, FSUtils}
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.index._
 import org.apache.lucene.store.FSDirectory
@@ -18,9 +19,9 @@ import roar.hbase.RoarHbaseConstants
 import roar.hbase.model.ResourceDefinition
 import stark.utils.services.LoggerSupport
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import scala.concurrent.duration.Duration
-import ExecutionContext.Implicits.global
 
 
 /**
@@ -138,6 +139,7 @@ trait RegionIndexSupport {
     * wait split index thread finish
     */
   protected def awaitSplitIndexComplete(l:Region,r:Region): Unit ={
+
     splitterOpt.foreach{f=>
       Await.result(f,Duration.Inf)
       info("finish to split index")
@@ -148,24 +150,50 @@ trait RegionIndexSupport {
         dir match{
           case d:FSDirectory =>
             val parentFile = d.getDirectory.getParent.toFile
+
             val pathA= new File(parentFile,"d_a")
             val pathADest= new File(parentFile,l.getRegionInfo.getEncodedName)
+            if(pathADest.exists())
+              pathADest.delete()
             FileUtils.moveDirectory(pathA,pathADest)
+
             val pathB= new File(parentFile,"d_b")
             val pathBDest= new File(parentFile,r.getRegionInfo.getEncodedName)
+            if(pathBDest.exists())
+              pathBDest.delete()
             FileUtils.moveDirectory(pathB,pathBDest)
 
           case d:HdfsDirectory=>
+            val fs = d.getFileSystem
             val parent = d.getHdfsDirPath.getParent
             val pathA=new Path(parent,"d_a")
             val pathADest=new Path(parent,l.getRegionInfo.getEncodedName)
+            if(fs.exists(pathADest))
+              fs.delete(pathADest,true)
+
             val pathB=new Path(parent,"d_b")
             val pathBDest=new Path(parent,r.getRegionInfo.getEncodedName)
+            if(fs.exists(pathBDest))
+              fs.delete(pathBDest,true)
+
             parent.getFileSystem(d.getConfiguration).rename(pathA,pathADest)
             parent.getFileSystem(d.getConfiguration).rename(pathB,pathBDest)
         }
       }
-      //move directory
+
+    }
+  }
+
+  private class LoggingProgressable(hri:HRegionInfo,interval:Long) extends CancelableProgressable {
+    private var lastLog: Long = -1
+
+    def progress: Boolean = {
+      val now: Long = EnvironmentEdgeManager.currentTime
+      if (now - lastLog > this.interval) {
+        info("Opening " + this.hri.getRegionNameAsString)
+        this.lastLog = now
+      }
+      return true
     }
   }
   protected def closeIndex():Unit={

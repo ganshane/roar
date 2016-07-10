@@ -44,7 +44,9 @@ class IndexRegionObserverIntegrationTest extends LoggerSupport{
     //create resource definition
     val zkw = util.getZooKeeperWatcher
     val bytes = IOUtils.toByteArray(getClass.getResourceAsStream("/test_res.xml"))
-    val resPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_PATH,tableName.getNameAsString)
+    val parent = conf.get(HConstants.ZOOKEEPER_ZNODE_PARENT)
+    val resourcesPath = ZKUtil.joinZNode(parent,RoarHbaseConstants.RESOURCES_PATH)
+    val resPath = ZKUtil.joinZNode(resourcesPath,tableName.getNameAsString)
     debug("resPath:{}",resPath)
     while(RegionServerData.regionServerResources.isEmpty){
       ZKUtil.createSetData(zkw,resPath,bytes)

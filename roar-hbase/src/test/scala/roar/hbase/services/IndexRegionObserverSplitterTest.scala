@@ -93,7 +93,7 @@ class IndexRegionObserverSplitterTest{
     val host: RegionCoprocessorHost = new RegionCoprocessorHost(this.parent, null, TEST_UTIL.getConfiguration)
     this.parent.setCoprocessorHost(host)
     TEST_UTIL.getConfiguration.setBoolean("hbase.testing.nocluster", true)
-    host.postOpen
+//    host.postOpen
   }
 
   @After

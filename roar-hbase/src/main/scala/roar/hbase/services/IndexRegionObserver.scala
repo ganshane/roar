@@ -87,16 +87,16 @@ class IndexRegionObserver extends BaseRegionObserver
 
 
   override def preSplit(c: ObserverContext[RegionCoprocessorEnvironment], splitRow: Array[Byte]): Unit = {
-    prepareSplitIndex(splitRow)
+//    prepareSplitIndex(splitRow)
   }
 
 
   override def postRollBackSplit(ctx: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
-    rollbackSplitIndex()
+//    rollbackSplitIndex()
   }
 
   override def postSplit(e: ObserverContext[RegionCoprocessorEnvironment], l: Region, r: Region): Unit = {
-    awaitSplitIndexComplete(l,r)
+//    awaitSplitIndexComplete(l,r)
   }
 
 

@@ -2,7 +2,7 @@ package roar.hbase.services
 
 import java.util
 
-import org.apache.hadoop.hbase.CoprocessorEnvironment
+import org.apache.hadoop.hbase.{HConstants, CoprocessorEnvironment}
 import org.apache.hadoop.hbase.coprocessor.{CoprocessorException, BaseRegionServerObserver, RegionServerCoprocessorEnvironment}
 import org.apache.hadoop.hbase.zookeeper.{ZKUtil, ZooKeeperListener, ZooKeeperWatcher}
 import roar.hbase.RoarHbaseConstants
@@ -25,6 +25,7 @@ private[services] object RegionServerData extends LoggerSupport{
   var regionServerResources = Map[String, ResourceDefinition]()
   //create document source
   val documentSource = new DocumentSourceImpl(new java.util.HashMap[String, DocumentCreator]())
+  var resourcesPath:String = _
 
   def addResources(zkw:ZooKeeperWatcher,resources:util.List[String]): Unit ={
     if(resources != null) {
@@ -32,7 +33,7 @@ private[services] object RegionServerData extends LoggerSupport{
       val buffer = new ArrayBuffer[ResourceDefinition](resources.size())
       while (it.hasNext) {
         val res = it.next()
-        val resPath = ZKUtil.joinZNode(RoarHbaseConstants.RESOURCES_PATH, res)
+        val resPath = ZKUtil.joinZNode(resourcesPath, res)
         val data = ZKUtil.getDataAndWatch(zkw, resPath)
         val rdOpt = parseXML(data)
         rdOpt.foreach(buffer +=)
@@ -58,8 +59,8 @@ private[services] object RegionServerData extends LoggerSupport{
   }
   class ResourceListener(zkw:ZooKeeperWatcher) extends ZooKeeperListener(zkw) {
     override def nodeChildrenChanged(path: String): Unit = {
-      if(path == RoarHbaseConstants.RESOURCES_PATH){
-        val resources = ZKUtil.listChildrenAndWatchThem(zkw,RoarHbaseConstants.RESOURCES_PATH)
+      if(path == resourcesPath){
+        val resources = ZKUtil.listChildrenAndWatchThem(zkw,resourcesPath)
         addResources(zkw,resources)
         debug("resources:{} children changed,children:{},size:{}",path,resources,regionServerResources.size)
       }
@@ -67,7 +68,7 @@ private[services] object RegionServerData extends LoggerSupport{
 
     //called when resource definition changed
     override def nodeDataChanged(path: String): Unit = {
-      if(path.startsWith(RoarHbaseConstants.RESOURCES_PATH)){
+      if(path.startsWith(resourcesPath)){
         debug("resource content changed:{}",path)
         val data = ZKUtil.getData(zkw,path)
         val rdOpt = parseXML(data)
@@ -84,18 +85,21 @@ class IndexRegionServerObserver extends BaseRegionServerObserver with LoggerSupp
   override def start(env: CoprocessorEnvironment): Unit = {
     env match {
       case rssEnv: RegionServerCoprocessorEnvironment =>
-        debug("start region server coprocessor")
+        val parent = env.getConfiguration.get(HConstants.ZOOKEEPER_ZNODE_PARENT)
+        val resourcesPath = ZKUtil.joinZNode(parent,RoarHbaseConstants.RESOURCES_PATH)
+        info("start region index server coprocessor")
+        RegionServerData.resourcesPath = resourcesPath
         val rss = rssEnv.getRegionServerServices
         val zkw = rss.getZooKeeper
         zkw.registerListener(new ResourceListener(zkw))
-        debug("watching {}", RoarHbaseConstants.RESOURCES_PATH)
-        while (ZKUtil.checkExists(zkw, RoarHbaseConstants.RESOURCES_PATH) == -1) {
-          ZKUtil.createWithParents(zkw, RoarHbaseConstants.RESOURCES_PATH)
+        info("watching {}", resourcesPath)
+        while (ZKUtil.checkExists(zkw, resourcesPath) == -1) {
+          ZKUtil.createWithParents(zkw, resourcesPath)
         }
 
-        val resources = ZKUtil.listChildrenAndWatchThem(zkw, RoarHbaseConstants.RESOURCES_PATH)
+        val resources = ZKUtil.listChildrenAndWatchThem(zkw, resourcesPath)
         RegionServerData.addResources(zkw, resources)
-        debug("finish start region server coprocessor,resource size:{}", RegionServerData.regionServerResources.size)
+        info("finish start region server coprocessor,resource size:{}", RegionServerData.regionServerResources.size)
       case _ =>
         throw new CoprocessorException("Must be loaded on a region server!")
     }

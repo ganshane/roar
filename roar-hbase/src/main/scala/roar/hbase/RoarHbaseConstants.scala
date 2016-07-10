@@ -11,8 +11,7 @@ object RoarHbaseConstants {
   final val REGION_INDEX_PATH_FORMAT= "INDEX/%s"
   final val defaultAnalyzer = new CJKAnalyzer
 
-  final val RESOURCES_PATH="/resources"
-  final val RESOURCE_PATH_FORMAT=RESOURCES_PATH+"/%s"
+  final val RESOURCES_PATH="resources"
 
   /*Index Constant*/
   final val OBJECT_ID_FIELD_NAME = "_id"
