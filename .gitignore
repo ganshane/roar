@@ -25,3 +25,4 @@ support/config/local*
 **/src/main/conf/development/*
 support/log
 verinfo.h
+*/dependency-reduced-pom.xml
