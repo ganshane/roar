@@ -12,6 +12,7 @@ object RoarHbaseConstants {
   final val defaultAnalyzer = new CJKAnalyzer
 
   final val RESOURCES_PATH="resources"
+  final val INDEX_TRANSACTIONS_PATH="region-idx-in-split" //index transactions
 
   /*Index Constant*/
   final val OBJECT_ID_FIELD_NAME = "_id"

@@ -1,12 +1,12 @@
 package roar.hbase.services
 
 import org.apache.hadoop.hbase.client.{Delete, Durability, Get, Put}
-import org.apache.hadoop.hbase.coprocessor.{CoprocessorException, BaseRegionObserver, ObserverContext, RegionCoprocessorEnvironment}
+import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, CoprocessorException, ObserverContext, RegionCoprocessorEnvironment}
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit
 import org.apache.hadoop.hbase.regionserver.{Region, Store, StoreFile}
 import org.apache.hadoop.hbase.wal.WALKey
-import org.apache.hadoop.hbase.{CoprocessorEnvironment, CellUtil, HRegionInfo}
+import org.apache.hadoop.hbase.{CellUtil, CoprocessorEnvironment, HRegionInfo}
 import stark.utils.services.LoggerSupport
 
 /**
@@ -88,11 +88,17 @@ class IndexRegionObserver extends BaseRegionObserver
 
   override def preSplit(c: ObserverContext[RegionCoprocessorEnvironment], splitRow: Array[Byte]): Unit = {
 //    prepareSplitIndex(splitRow)
+
   }
 
 
   override def postRollBackSplit(ctx: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
 //    rollbackSplitIndex()
+  }
+
+
+  override def preSplitAfterPONR(ctx: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
+    prepareSplitIndexAfterPONR()
   }
 
   override def postSplit(e: ObserverContext[RegionCoprocessorEnvironment], l: Region, r: Region): Unit = {

@@ -2,18 +2,17 @@ package roar.hbase.services
 
 import java.io.File
 
-import org.apache.commons.io.FileUtils
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hbase.HRegionInfo
 import org.apache.hadoop.hbase.client.{Delete, Result}
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
+import org.apache.hadoop.hbase.protobuf.generated.AdminProtos
 import org.apache.hadoop.hbase.regionserver.Region
-import org.apache.hadoop.hbase.util.{CancelableProgressable, EnvironmentEdgeManager, FSUtils}
+import org.apache.hadoop.hbase.util.FSUtils
+import org.apache.hadoop.hbase.zookeeper.ZKUtil
+import org.apache.hadoop.hbase.{HRegionInfo, MetaTableAccessor}
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.index._
 import org.apache.lucene.store.FSDirectory
-import org.apache.lucene.util.BytesRef
 import org.apache.solr.store.hdfs.HdfsDirectory
 import roar.hbase.RoarHbaseConstants
 import roar.hbase.model.ResourceDefinition
@@ -49,7 +48,6 @@ trait RegionIndexSupport {
         val rootDir = FSUtils.getRootDir(coprocessorEnv.getConfiguration)
         val tableDir = FSUtils.getTableDir(rootDir, tableName)
 
-        val conf = new Configuration()
         val indexPath = new Path(tableDir, regionIndexPath)
         logger.info("create index with path {}", indexPath)
 
@@ -57,7 +55,7 @@ trait RegionIndexSupport {
         if(indexPath.toString.startsWith("file"))
           FSDirectory.open(new File(indexPath.toUri).toPath)
         else
-         new HdfsDirectory(indexPath, HdfsLockFactoryInHbase, conf)
+         new HdfsDirectory(indexPath, HdfsLockFactoryInHbase, coprocessorEnv.getConfiguration)
 
         val config = new IndexWriterConfig(RoarHbaseConstants.defaultAnalyzer)
         val mergePolicy = new LogByteSizeMergePolicy()
@@ -72,7 +70,7 @@ trait RegionIndexSupport {
   }
   def index(timestamp:Long,result:Result): Unit = {
     indexWriterOpt foreach {indexWriter=>
-      val rowTerm = createSIdTerm(result.getRow)
+      val rowTerm = IndexHelper.createSIdTerm(result.getRow)
       debug("[{}] index row term {}",rd.name,rowTerm)
       val docOpt = RegionServerData.documentSource.newDocument(rd,timestamp,result)
       docOpt.foreach(indexWriter.updateDocument(rowTerm, _))
@@ -90,44 +88,45 @@ trait RegionIndexSupport {
   }
   def deleteIndex(delete:Delete):Unit={
     indexWriterOpt foreach {indexWriter=>
-      val rowTerm = createSIdTerm(delete.getRow)
+      val rowTerm = IndexHelper.createSIdTerm(delete.getRow)
       debug("[{}] delete row term {}",rd.name,rowTerm)
       indexWriter.deleteDocuments(rowTerm)
     }
   }
 
-  private def createSIdTerm(id: Array[Byte]) = {
-    val bb = new BytesRef(id)
-    new Term(RoarHbaseConstants.OBJECT_ID_FIELD_NAME, bb)
-  }
   protected def flushIndex(): Unit ={
-    //提交索引到磁盘
+    //commit index to disk or dfs
     indexWriterOpt.foreach(_.commit())
   }
-  protected def prepareSplitIndex(splitRow:Array[Byte]): Unit ={
-    splitterOpt = indexWriterOpt map {indexWriter=>
-      info("prepare split index")
-      val dir = indexWriter.getDirectory
-      val splitter = dir match{
-        case d:FSDirectory =>
-          val pathA= new File(d.getDirectory.getParent.toFile,"d_a").toPath
-          val pathB= new File(d.getDirectory.getParent.toFile,"d_b").toPath
-          val dirA = FSDirectory.open(pathA)
-          val dirB = FSDirectory.open(pathB)
-          new PKIndexSplitter(d,dirA,dirB,createSIdTerm(splitRow))
-        case d:HdfsDirectory=>
-          val pathA=new Path(d.getHdfsDirPath.getParent,"d_a")
-          val pathB=new Path(d.getHdfsDirPath.getParent,"d_b")
-          val conf = d.getConfiguration
-          val dirA = new HdfsDirectory(pathA, HdfsLockFactoryInHbase, conf)
-          val dirB = new HdfsDirectory(pathB, HdfsLockFactoryInHbase, conf)
-          new PKIndexSplitter(d,dirA,dirB,createSIdTerm(splitRow))
-      }
-      //create thread to split parent index
-      Future[Unit] {
-        splitter.split()
-      }
+  protected def prepareSplitIndexAfterPONR(): Unit ={
+    indexWriterOpt foreach { indexWriter =>
+      //fetch daughters info from meta table
+      val rss = coprocessorEnv.getRegionServerServices
+      val conn = rss.getConnection
+      val result = MetaTableAccessor.getRegionResult(conn,coprocessorEnv.getRegionInfo.getRegionName)
+      val daughters = MetaTableAccessor.getDaughterRegions(result)
+      val conf = coprocessorEnv.getConfiguration
+
+
+      //create index transaction node
+      val zkw = coprocessorEnv.getRegionServerServices.getZooKeeper
+      val transactionPath = IndexSplitter.getTransactionPath(conf)
+
+      //use daughter A to denote the transaction
+      val daughterAPath = ZKUtil.joinZNode(transactionPath,daughters.getFirst.getEncodedName)
+      //set parent and daughters data to daughter A path
+      val builder = AdminProtos.GetOnlineRegionResponse.newBuilder()
+      builder.addRegionInfo(HRegionInfo.convert(coprocessorEnv.getRegionInfo))
+      builder.addRegionInfo(HRegionInfo.convert(daughters.getFirst))
+      builder.addRegionInfo(HRegionInfo.convert(daughters.getSecond))
+      ZKUtil.createSetData(zkw,daughterAPath,builder.build().toByteArray)
+
+      val future = IndexSplitter.submitSplit(zkw,daughters.getFirst.getEncodedName,coprocessorEnv.getConfiguration)
+
+      Await.result(future,Duration.Inf)
     }
+  }
+  protected def prepareSplitIndex(splitRow:Array[Byte]): Unit ={
   }
   protected def rollbackSplitIndex(): Unit ={
     //TODO How to stop scala future (index thread).
@@ -143,59 +142,9 @@ trait RegionIndexSupport {
     splitterOpt.foreach{f=>
       Await.result(f,Duration.Inf)
       info("finish to split index")
-
-      //rename directory
-      indexWriterOpt foreach{ indexWriter=>
-        val dir = indexWriter.getDirectory
-        dir match{
-          case d:FSDirectory =>
-            val parentFile = d.getDirectory.getParent.toFile
-
-            val pathA= new File(parentFile,"d_a")
-            val pathADest= new File(parentFile,l.getRegionInfo.getEncodedName)
-            if(pathADest.exists())
-              pathADest.delete()
-            FileUtils.moveDirectory(pathA,pathADest)
-
-            val pathB= new File(parentFile,"d_b")
-            val pathBDest= new File(parentFile,r.getRegionInfo.getEncodedName)
-            if(pathBDest.exists())
-              pathBDest.delete()
-            FileUtils.moveDirectory(pathB,pathBDest)
-
-          case d:HdfsDirectory=>
-            val fs = d.getFileSystem
-            val parent = d.getHdfsDirPath.getParent
-            val pathA=new Path(parent,"d_a")
-            val pathADest=new Path(parent,l.getRegionInfo.getEncodedName)
-            if(fs.exists(pathADest))
-              fs.delete(pathADest,true)
-
-            val pathB=new Path(parent,"d_b")
-            val pathBDest=new Path(parent,r.getRegionInfo.getEncodedName)
-            if(fs.exists(pathBDest))
-              fs.delete(pathBDest,true)
-
-            parent.getFileSystem(d.getConfiguration).rename(pathA,pathADest)
-            parent.getFileSystem(d.getConfiguration).rename(pathB,pathBDest)
-        }
-      }
-
     }
   }
 
-  private class LoggingProgressable(hri:HRegionInfo,interval:Long) extends CancelableProgressable {
-    private var lastLog: Long = -1
-
-    def progress: Boolean = {
-      val now: Long = EnvironmentEdgeManager.currentTime
-      if (now - lastLog > this.interval) {
-        info("Opening " + this.hri.getRegionNameAsString)
-        this.lastLog = now
-      }
-      return true
-    }
-  }
   protected def closeIndex():Unit={
     indexWriterOpt.foreach{indexWriter=>
       logger.info("closing index writer...")
@@ -208,5 +157,6 @@ trait RegionIndexSupport {
   * provide RegionCoprocessor Environment
   */
 trait RegionCoprocessorEnvironmentSupport{
+  @inline
   def coprocessorEnv:RegionCoprocessorEnvironment
 }
