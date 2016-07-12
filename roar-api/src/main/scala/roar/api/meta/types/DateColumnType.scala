@@ -1,6 +1,6 @@
 // Copyright 2011,2012,2013,2015,2016 the original author or authors. All rights reserved.
 // site: http://www.ganshane.com
-package roar.hbase.model.types
+package roar.api.meta.types
 
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
@@ -8,9 +8,9 @@ import java.util.Date
 
 import org.apache.hadoop.hbase.Cell
 import org.apache.lucene.document.{Field, IntField, NumericDocValuesField}
-import roar.hbase.model.DataColumnType
-import roar.hbase.model.ResourceDefinition.ResourceProperty
-import roar.hbase.services.DataTypeUtils
+import roar.api.meta.DataColumnType
+import roar.api.meta._
+import roar.api.meta.ResourceDefinition.ResourceProperty
 
 /**
  * string column type
@@ -34,12 +34,12 @@ class DateColumnType extends DataColumnType[Long] {
   }
 
   def createIndexField(value: Long, cd: ResourceProperty) = {
-    val valueConverted = DataTypeUtils.convertDateAsInt(value)
+    val valueConverted = convertDateAsInt(value)
     (new IntField(cd.name, valueConverted, IntField.TYPE_NOT_STORED),Some(new NumericDocValuesField(cd.name,value)))
   }
 
   def setIndexValue(f: (Field,Option[Field]), value: Long, cd: ResourceProperty) {
-    f._1.setIntValue(DataTypeUtils.convertDateAsInt(value))
+    f._1.setIntValue(convertDateAsInt(value))
     f._2.foreach(_.setLongValue(value))
   }
 }

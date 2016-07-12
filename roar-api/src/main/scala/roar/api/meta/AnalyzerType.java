@@ -3,7 +3,7 @@
 /*
  * Copyright 2012 The EGF IT Software Department.
  */
-package roar.hbase.model;
+package roar.api.meta;
 
 /**
  * 分析器类型

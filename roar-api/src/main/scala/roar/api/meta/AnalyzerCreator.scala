@@ -1,10 +1,8 @@
 // Copyright 2012,2013,2015,2016 the original author or authors. All rights reserved.
 // site: http://www.ganshane.com
-package roar.hbase.model
+package roar.api.meta
 
 import org.apache.lucene.analysis.Analyzer
-import roar.hbase.services.RoarHbaseExceptionCode
-import stark.utils.services.StarkException
 
 /**
  * 分词器的创建
@@ -14,9 +12,7 @@ import stark.utils.services.StarkException
 object AnalyzerCreator {
   def create(analyzerType: AnalyzerType) = {
     if (analyzerType == null) {
-      throw new StarkException("analyzerType is null!",
-        RoarHbaseExceptionCode.ANALYZER_TYPE_IS_NULL
-      )
+      throw new IllegalArgumentException("analyzerType is null!")
     }
 
     val clazz = analyzerType.clazz

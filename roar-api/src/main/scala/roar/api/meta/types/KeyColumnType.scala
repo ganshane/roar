@@ -1,13 +1,13 @@
 // Copyright 2012,2013,2015,2016 the original author or authors. All rights reserved.
 // site: http://www.ganshane.com
-package roar.hbase.model.types
+package roar.api.meta.types
 
 import org.apache.hadoop.hbase.Cell
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.document.{Field, StringField}
-import roar.hbase.model.ResourceDefinition.ResourceProperty
-import roar.hbase.model.{AnalyzerCreator, DataColumnType}
+import roar.api.meta.{AnalyzerCreator, DataColumnType}
+import roar.api.meta.ResourceDefinition.ResourceProperty
 
 /**
  * string column type

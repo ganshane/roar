@@ -12,9 +12,10 @@ import org.apache.lucene.queryparser.classic.MultiFieldQueryParser
 import org.apache.lucene.queryparser.classic.QueryParser.Operator
 import org.apache.lucene.search.{NumericRangeQuery, Query}
 import org.slf4j.LoggerFactory
+import roar.api.meta.{AnalyzerCreator, ResourceDefinition}
 import roar.hbase.RoarHbaseConstants
-import roar.hbase.model.{ColumnType, ResourceDefinition, AnalyzerCreator}
-import roar.hbase.model.ResourceDefinition.ResourceProperty
+import roar.api.meta.ColumnType
+import ResourceDefinition.ResourceProperty
 import roar.hbase.services.RoarHbaseExceptionCode
 import stark.utils.services.StarkException
 import scala.collection.JavaConversions._

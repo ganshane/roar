@@ -1,9 +1,9 @@
-package roar.hbase.model
+package roar.api.meta
 
 import org.apache.hadoop.hbase.Cell
 import org.apache.hadoop.hbase.client.{Put, Result}
 import org.apache.lucene.document.Field
-import roar.hbase.model.ResourceDefinition.ResourceProperty
+import roar.api.meta.ResourceDefinition.ResourceProperty
 
 /**
   * 数据列定义类型

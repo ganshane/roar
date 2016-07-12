@@ -16,6 +16,10 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>roar-api_${scala-binary-version}</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>roar-protocol</artifactId>
       <exclusions>
         <exclusion>

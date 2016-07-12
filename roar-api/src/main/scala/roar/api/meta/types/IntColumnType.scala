@@ -1,14 +1,14 @@
 // Copyright 2011,2012,2013,2015,2016 the original author or authors. All rights reserved.
 // site: http://www.ganshane.com
-package roar.hbase.model.types
+package roar.api.meta.types
 
 import java.nio.ByteBuffer
 import java.sql.PreparedStatement
 
 import org.apache.hadoop.hbase.Cell
 import org.apache.lucene.document.{Field, IntField, NumericDocValuesField}
-import roar.hbase.model.DataColumnType
-import roar.hbase.model.ResourceDefinition.ResourceProperty
+import roar.api.meta.DataColumnType
+import roar.api.meta.ResourceDefinition.ResourceProperty
 
 /**
  * Int Type Column

@@ -4,12 +4,12 @@
  * Copyright 2012 The EGF IT Software Department.
  */
 
-package roar.hbase.model.types
+package roar.api.meta.types
 
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.document.TextField
-import roar.hbase.model.AnalyzerCreator
-import roar.hbase.model.ResourceDefinition.ResourceProperty
+import roar.api.meta.AnalyzerCreator
+import roar.api.meta.ResourceDefinition.ResourceProperty
 
 /**
  * clob类型的列

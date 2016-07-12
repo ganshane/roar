@@ -7,9 +7,10 @@ import org.apache.lucene.document.Document
 import org.apache.lucene.index.IndexReader
 import org.apache.lucene.search._
 import org.apache.lucene.util.BytesRef
+import roar.api.meta.ResourceDefinition
 import roar.hbase.internal.{InternalIndexSearcher, QueryParserSupport, SearcherManagerSupport}
-import roar.hbase.model.ColumnType
-import roar.hbase.model.ResourceDefinition.ResourceProperty
+import roar.api.meta.ColumnType
+import ResourceDefinition.ResourceProperty
 import roar.protocol.generated.RoarProtos.SearchResponse
 import stark.utils.services.LoggerSupport
 

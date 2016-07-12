@@ -1,11 +1,11 @@
 // Copyright 2012,2013,2015,2016 the original author or authors. All rights reserved.
 // site: http://www.ganshane.com
-package roar.hbase.model
+package roar.api.meta
 
 import java.util
 import javax.xml.bind.annotation._
 
-import roar.hbase.model.ResourceDefinition._
+import roar.api.meta.ResourceDefinition._
 
 
 /**

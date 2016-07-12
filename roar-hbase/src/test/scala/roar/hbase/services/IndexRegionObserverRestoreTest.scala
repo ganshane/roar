@@ -12,7 +12,7 @@ import org.apache.hadoop.hbase.regionserver.{Region, HRegion, RegionCoprocessorH
 import org.apache.hadoop.hbase.util._
 import org.apache.hadoop.hbase.wal.DefaultWALProvider
 import org.junit.{Assert, Test}
-import roar.hbase.model.ResourceDefinition
+import roar.api.meta.ResourceDefinition
 import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
 import stark.utils.services.XmlLoader
 

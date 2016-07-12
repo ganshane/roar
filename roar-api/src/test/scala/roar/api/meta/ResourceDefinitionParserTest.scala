@@ -1,9 +1,9 @@
 // Copyright 2012,2013,2015,2016 the original author or authors. All rights reserved.
 // site: http://www.ganshane.com
-package roar.hbase.model
+package roar.api.meta
 
 import org.junit.{Assert, Test}
-import roar.hbase.model.ResourceDefinition.ResourceDynamicType
+import roar.api.meta.ResourceDefinition.ResourceDynamicType
 import stark.utils.services.XmlLoader
 
 /**

@@ -4,9 +4,9 @@ package roar.hbase.services
 
 import org.apache.hadoop.hbase.client.{Put, Result}
 import org.apache.lucene.document.Field
-import roar.hbase.model.ResourceDefinition.{ResourceProperty, ResourceTraitProperty}
-import roar.hbase.model.types._
-import roar.hbase.model.{ColumnType, DataColumnType, IndexType, ResourceDefinition}
+import roar.api.meta.ResourceDefinition.{ResourceProperty, ResourceTraitProperty}
+import roar.api.meta.types._
+import roar.api.meta.{ColumnType, DataColumnType, IndexType, ResourceDefinition}
 import stark.utils.services.StarkException
 
 import scala.util.control.NonFatal

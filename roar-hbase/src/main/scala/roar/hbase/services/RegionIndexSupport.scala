@@ -14,8 +14,8 @@ import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.index._
 import org.apache.lucene.store.FSDirectory
 import org.apache.solr.store.hdfs.HdfsDirectory
+import roar.api.meta.ResourceDefinition
 import roar.hbase.RoarHbaseConstants
-import roar.hbase.model.ResourceDefinition
 import stark.utils.services.LoggerSupport
 
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -4,7 +4,7 @@ package roar.hbase.services
 
 import org.apache.hadoop.hbase.client.Result
 import org.apache.lucene.document.Document
-import roar.hbase.model.ResourceDefinition
+import roar.api.meta.ResourceDefinition
 
 /**
  * 文档创建

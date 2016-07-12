@@ -1,6 +1,6 @@
 // Copyright 2016 the original author or authors. All rights reserved.
 // site: http://www.ganshane.com
-package roar.hbase.model;
+package roar.api.meta;
 
 /**
  * object category

@@ -5,9 +5,9 @@ import java.util
 import org.apache.hadoop.hbase.{HConstants, CoprocessorEnvironment}
 import org.apache.hadoop.hbase.coprocessor.{CoprocessorException, BaseRegionServerObserver, RegionServerCoprocessorEnvironment}
 import org.apache.hadoop.hbase.zookeeper.{ZKUtil, ZooKeeperListener, ZooKeeperWatcher}
+import roar.api.meta.ResourceDefinition
 import roar.hbase.RoarHbaseConstants
 import roar.hbase.internal.DocumentSourceImpl
-import roar.hbase.model.ResourceDefinition
 import roar.hbase.services.RegionServerData.ResourceListener
 import stark.utils.StarkUtilsConstants
 import stark.utils.services.{StarkException, LoggerSupport, XmlLoader}

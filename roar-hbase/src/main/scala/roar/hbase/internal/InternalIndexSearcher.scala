@@ -7,8 +7,8 @@ import java.util.concurrent.ExecutorService
 import org.apache.lucene.index.{IndexReader, LeafReaderContext}
 import org.apache.lucene.search.IndexSearcher
 import org.apache.lucene.util.BytesRef
+import roar.api.meta.ResourceDefinition
 import roar.hbase.RoarHbaseConstants
-import roar.hbase.model.ResourceDefinition
 
 /**
  * 针对某一资源进行搜索,增加了id缓存的支持

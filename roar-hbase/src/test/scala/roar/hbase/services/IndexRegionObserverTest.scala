@@ -8,7 +8,7 @@ import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
 import org.apache.hadoop.hbase.regionserver.{HRegion, RegionCoprocessorHost}
 import org.apache.hadoop.hbase.util.{ByteStringer, Bytes}
 import org.junit.{After, Assert, Before, Test}
-import roar.hbase.model.ResourceDefinition
+import roar.api.meta.ResourceDefinition
 import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
 import stark.utils.services.XmlLoader
 
