@@ -3,7 +3,7 @@ package roar.hbase.services
 import java.io.File
 
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hbase.client.{Delete, Result}
+import org.apache.hadoop.hbase.client.{Get, Delete, Result}
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.protobuf.generated.AdminProtos
 import org.apache.hadoop.hbase.regionserver.Region
@@ -90,7 +90,22 @@ trait RegionIndexSupport {
     indexWriterOpt foreach {indexWriter=>
       val rowTerm = IndexHelper.createSIdTerm(delete.getRow)
       debug("[{}] delete row term {}",rd.name,rowTerm)
-      indexWriter.deleteDocuments(rowTerm)
+      val get = new Get(delete.getRow)
+      /*
+      if(put.getTimeStamp != HConstants.LATEST_TIMESTAMP){
+        get.setTimeStamp(put.getTimeStamp)
+      }
+      */
+      val result = coprocessorEnv.getRegion.get(get)
+
+      val docOpt = RegionServerData.documentSource.newDocument(rd,delete.getTimeStamp,result)
+      docOpt match{
+        case Some(doc) =>
+          indexWriter.updateDocument(rowTerm,doc)
+        case None =>
+          //delete current document
+          indexWriter.deleteDocuments(rowTerm)
+      }
     }
   }
 

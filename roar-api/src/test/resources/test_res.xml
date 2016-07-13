@@ -21,6 +21,7 @@
     <property family="info" name="xb" cn_name="性别" list_name="性别" dic="性别" ></property>
     <property family="info" name="sfzh" cn_name="身份证号" list_name="身份证号" ></property>
     <property family="info" name="id" cn_name="ID" list_name="ID" column_type="Long"></property>
+    <property family="info" name="address" cn_name="地址" list_name="地址" column_type="Text"></property>
     <property family="info" name="create_time" cn_name="创建时间" list_name="创建时间" column_type="Date"></property>
   </properties>
   <!-- 本资源能查其他资源的分析 -->

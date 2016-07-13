@@ -17,6 +17,12 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>roar-api_${scala-binary-version}</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>hbase-client</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -403,6 +409,7 @@
                   <exclude>org.scala-lang:*</exclude>
                   <!--<exclude>org.apache.spark:*</exclude>-->
                   <exclude>org.slf4j:*</exclude>
+                  <exclude>commons-io:commons-io</exclude>
                   <exclude>log4j:*</exclude>
                 </excludes>
               </artifactSet>
