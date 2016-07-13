@@ -4,14 +4,14 @@ package roar.hbase.internal
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.hadoop.hbase.client.{Result, Put}
+import org.apache.hadoop.hbase.client.Result
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.document.{Document, Field, _}
 import org.apache.lucene.util.BytesRef
 import roar.api.meta.ResourceDefinition
+import roar.api.meta.ResourceDefinition.ResourceProperty
+import roar.api.meta.ResourceDefinitionConversions._
 import roar.hbase.RoarHbaseConstants
-import ResourceDefinition.ResourceProperty
-import roar.hbase.services.ResourceDefinitionConversions._
 import roar.hbase.services.{DocumentCreator, DocumentSource}
 import stark.utils.services.LoggerSupport
 

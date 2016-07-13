@@ -1,14 +1,14 @@
 // Copyright 2016 the original author or authors. All rights reserved.
 // site: http://www.ganshane.com
-package roar.hbase.services
+package roar.api.meta
 
 import org.apache.hadoop.hbase.client.{Put, Result}
 import org.apache.lucene.document.Field
+import org.apache.lucene.document.Field.Index
 import roar.api.meta.ResourceDefinition.{ResourceProperty, ResourceTraitProperty}
 import roar.api.meta.types._
-import roar.api.meta.{ColumnType, DataColumnType, IndexType, ResourceDefinition}
-import stark.utils.services.StarkException
 
+import scala.language.implicitConversions
 import scala.util.control.NonFatal
 
 /**
@@ -18,7 +18,12 @@ import scala.util.control.NonFatal
  * @since 2015-03-01
  */
 trait ResourceDefinitionConversions {
-  implicit def resourceDefinitionWrapper(rd: ResourceDefinition) = new {
+  trait ResourceDefinitionWrapper{
+    def addProperty(property: ResourceProperty):Unit
+    def addDynamicProperty(property: ResourceTraitProperty):Unit
+    def categoryProperty:Option[(Int,ResourceProperty)]
+  }
+  implicit def resourceDefinitionWrapper(rd: ResourceDefinition):ResourceDefinitionWrapper = new ResourceDefinitionWrapper {
     private lazy val _categoryProperty:Option[(Int,ResourceProperty)] = findObjectColumn()
     /**
      * 加入一个资源属性
@@ -46,7 +51,11 @@ trait ResourceDefinitionConversions {
       ret
     }
   }
-  implicit def indexTypeWrapper(it: IndexType) = new {
+
+  trait IndexTypeWrapper{
+    def indexType():Index
+  }
+  implicit def indexTypeWrapper(it: IndexType):IndexTypeWrapper = new IndexTypeWrapper {
     def indexType() = it match {
       case IndexType.Text =>
         Field.Index.ANALYZED
@@ -56,8 +65,11 @@ trait ResourceDefinitionConversions {
         Field.Index.NO
     }
   }
+  trait ColumnTypeWrapper{
+    def getColumnType: DataColumnType[_]
+  }
 
-  implicit def wrapColumnType(ct: ColumnType) = new {
+  implicit def wrapColumnType(ct: ColumnType):ColumnTypeWrapper= new ColumnTypeWrapper{
     def getColumnType: DataColumnType[_] = ct match {
       case ColumnType.Key=>
         KeyColumnType
@@ -71,7 +83,18 @@ trait ResourceDefinitionConversions {
         LongColumnType
     }
   }
-  implicit def resourcePropertyOps(rp: ResourceProperty) = new {
+  trait ResourcePropertyWrapper{
+
+    def createIndexField(value: Any): (Field,Option[Field])
+    def setIndexValue(f: (Field,Option[Field]), value: Any):Unit
+    def isToken: Boolean
+    def isKeyword: Boolean
+    def isNumeric: Boolean
+    def readDfsValue(dbObj: Put):Option[Any]
+    def readDfsValue(dbObj: Result):Option[Any]
+    def readApiValue(dbObj: Result):Option[String]
+  }
+  implicit def resourcePropertyOps(rp: ResourceProperty):ResourcePropertyWrapper = new ResourcePropertyWrapper{
     def createIndexField(value: Any): (Field,Option[Field]) = {
       rp.columnType.getColumnType.asInstanceOf[DataColumnType[Any]].createIndexField(value, rp)
     }
@@ -98,7 +121,7 @@ trait ResourceDefinitionConversions {
         rp.columnType.getColumnType.readValueFromDfs(dbObj, rp)
       } catch {
         case NonFatal(e) =>
-          throw new StarkException("unable to read value from dfs with name:" + rp.name, e, null)
+          throw new RuntimeException("unable to read value from dfs with name:" + rp.name, e)
       }
     }
     def readDfsValue(dbObj: Result) = {
@@ -106,7 +129,7 @@ trait ResourceDefinitionConversions {
         rp.columnType.getColumnType.readValueFromDfs(dbObj, rp)
       } catch {
         case NonFatal(e) =>
-          throw new StarkException("unable to read value from dfs with name:" + rp.name, e, null)
+          throw new RuntimeException("unable to read value from dfs with name:" + rp.name, e)
       }
     }
 
