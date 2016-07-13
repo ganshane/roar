@@ -31,7 +31,7 @@ class ResourceDefinitionParserTest {
 
     Assert.assertNotNull(rd.search)
 
-    Assert.assertEquals(5, rd.properties.size())
+    Assert.assertEquals(6, rd.properties.size())
     val pro = rd.properties.get(0)
     Assert.assertEquals("xm", pro.name)
     Assert.assertEquals(QueryType.String, pro.queryType)
