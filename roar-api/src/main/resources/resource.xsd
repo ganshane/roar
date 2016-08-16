@@ -6,6 +6,21 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified"
            elementFormDefault="qualified">
   <xs:element name="resource" type="resourceType"/>
+  <!-- 资源类型定义 -->
+  <xs:simpleType name="dataType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Real"/>
+      <xs:enumeration value="Data"/>
+      <xs:enumeration value="Virtual"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- 同步策略 -->
+  <xs:simpleType name="syncPolicyType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Incremental"/>
+      <xs:enumeration value="Full"/>
+    </xs:restriction>
+  </xs:simpleType>
   <!-- 分词器的定义 -->
   <xs:simpleType name="analyzerType">
     <xs:restriction base="xs:string">
@@ -18,6 +33,15 @@
   <xs:simpleType name="cronType">
     <xs:restriction base="xs:string">
       <xs:pattern value="[\d\*\?/\s]{7,21}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- index type -->
+  <xs:simpleType name="columnIndexType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Keyword"/>
+      <xs:enumeration value="Text"/>
+      <xs:enumeration value="UnIndexed"/>
+      <xs:enumeration value="UnStored"/>
     </xs:restriction>
   </xs:simpleType>
   <!-- column type -->
@@ -47,6 +71,8 @@
       <xs:enumeration value="Mac"/>
       <xs:enumeration value="QQ"/>
       <xs:enumeration value="WeiXin"/>
+      <xs:enumeration value="IMSI"/>
+      <xs:enumeration value="Other"/>
     </xs:restriction>
   </xs:simpleType>
   <!-- 索引部分的定义 -->
@@ -55,6 +81,66 @@
       <xs:element type="analyzerType" name="analyzer" default="Standard">
         <xs:annotation>
           <xs:documentation>索引分词器</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <!-- 轨迹定义 -->
+  <xs:complexType name="trailMappingType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="object" maxOccurs="1" minOccurs="1">
+        <xs:annotation>
+          <xs:documentation>对象字段</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="xs:string" name="start_time" maxOccurs="1" minOccurs="1">
+        <xs:annotation>
+          <xs:documentation>活动开始时间</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="xs:string" name="end_time" maxOccurs="1" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>活动结束时间</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="xs:string" name="geo" maxOccurs="1" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>经纬度</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="xs:string" name="location" maxOccurs="1" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>地点编码</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="xs:integer" name="type" maxOccurs="1" minOccurs="1">
+        <xs:annotation>
+          <xs:documentation>轨迹类型</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <!-- 行为定义 -->
+  <xs:complexType name="behaviourMappingType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="object_a" maxOccurs="1" minOccurs="1">
+        <xs:annotation>
+          <xs:documentation>对象A</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="xs:string" name="start_time" maxOccurs="1" minOccurs="1">
+        <xs:annotation>
+          <xs:documentation>活动开始时间</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="xs:string" name="end_time" maxOccurs="1" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>活动结束时间</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="xs:string" name="object_b" maxOccurs="1" minOccurs="1">
+        <xs:annotation>
+          <xs:documentation>对象B</xs:documentation>
         </xs:annotation>
       </xs:element>
     </xs:sequence>
@@ -75,6 +161,21 @@
   </xs:complexType>
   <xs:complexType name="syncType">
     <xs:sequence>
+      <xs:element type="cronType" name="cron" default="0 0 1 * * ? *">
+        <xs:annotation>
+          <xs:documentation>数据同步定时器</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="xs:float" name="interval" default="60" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>数据同步时间间隔</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="syncPolicyType" name="policy" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>数据同步策略</xs:documentation>
+        </xs:annotation>
+      </xs:element>
       <xs:element type="xs:string" name="preprocessor" minOccurs="0" maxOccurs="1">
         <xs:annotation>
           <xs:documentation>数据预处理器</xs:documentation>
@@ -88,6 +189,11 @@
       <xs:element type="xs:string" name="encoding" minOccurs="0" maxOccurs="1">
         <xs:annotation>
           <xs:documentation>原始数据编码，方便进行转码维护</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element type="jdbcType" name="jdbc" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>jdbc相关定义</xs:documentation>
         </xs:annotation>
       </xs:element>
     </xs:sequence>
@@ -133,6 +239,16 @@
         <xs:attribute type="xs:string" name="dic" use="optional">
           <xs:annotation>
             <xs:documentation>该项对应的字典</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute type="xs:boolean" name="primary_key" use="optional">
+          <xs:annotation>
+            <xs:documentation>是否为主键</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute type="xs:boolean" name="modify_key" use="optional">
+          <xs:annotation>
+            <xs:documentation>是否为增量判断字段</xs:documentation>
           </xs:annotation>
         </xs:attribute>
         <xs:attribute type="xs:string" name="db_format" use="optional">
@@ -188,6 +304,16 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="jdbcType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="driver"/>
+      <xs:element type="xs:string" name="url"/>
+      <xs:element type="xs:string" name="user"/>
+      <xs:element type="xs:string" name="password"/>
+      <xs:element type="xs:integer" name="batch_size"/>
+      <xs:element type="xs:string" name="sql"/>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="relType">
@@ -256,6 +382,21 @@
         <xs:documentation>资源名称</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+    <xs:attribute type="dataType" name="type" use="optional" default="Real">
+      <xs:annotation>
+        <xs:documentation>
+          资源类型
+          Real (默认) 正常资源
+          Data 仅仅提供数据的资源，配置此属性后，要与下方的target共同配置起作用
+          Virtual 虚拟资源，相当于只提供前台的查询功能，由其他资源提供数据
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute type="xs:string" name="target" use="optional">
+      <xs:annotation>
+        <xs:documentation>配置本资源将导入到的目标资源</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
     <xs:attribute type="xs:string" name="cn_name" use="required">
       <xs:annotation>
         <xs:documentation>资源中文名称</xs:documentation>
@@ -269,6 +410,11 @@
     <xs:attribute type="xs:boolean" name="share" default="false">
       <xs:annotation>
         <xs:documentation>资源是否为共享资源</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute type="xs:boolean" name="save" default="true">
+      <xs:annotation>
+        <xs:documentation>是否在抽取的时候保存本资源内容</xs:documentation>
       </xs:annotation>
     </xs:attribute>
   </xs:complexType>
