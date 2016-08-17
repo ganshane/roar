@@ -4,7 +4,7 @@ import org.apache.hadoop.hbase.client.{Delete, Durability, Get, Put}
 import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, CoprocessorException, ObserverContext, RegionCoprocessorEnvironment}
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit
-import org.apache.hadoop.hbase.regionserver.{Region, Store, StoreFile}
+import org.apache.hadoop.hbase.regionserver.{Store, StoreFile}
 import org.apache.hadoop.hbase.wal.WALKey
 import org.apache.hadoop.hbase.{CellUtil, CoprocessorEnvironment, HRegionInfo}
 import stark.utils.services.LoggerSupport
@@ -63,13 +63,13 @@ class IndexRegionObserver extends BaseRegionObserver
     val result = _env.getRegion.get(get)
 
     index(put.getTimeStamp,result)
-    mybeRefresh()
+    maybeRefresh()
   }
 
 
   override def postDelete(e: ObserverContext[RegionCoprocessorEnvironment], delete: Delete, edit: WALEdit, durability: Durability): Unit = {
     deleteIndex(delete)
-    mybeRefresh()
+    maybeRefresh()
   }
 
   override def postWALRestore(env: ObserverContext[_ <: RegionCoprocessorEnvironment], info: HRegionInfo, logKey: WALKey, logEdit: WALEdit): Unit = {
@@ -82,32 +82,16 @@ class IndexRegionObserver extends BaseRegionObserver
       val result = _env.getRegion.get(get)
       index(cell.getTimestamp,result)
     }
-    mybeRefresh()
+    maybeRefresh()
   }
 
 
   override def preSplit(c: ObserverContext[RegionCoprocessorEnvironment], splitRow: Array[Byte]): Unit = {
-//    prepareSplitIndex(splitRow)
-
+    //stop split
+    if(maybeStopSplit)
+      c.bypass()
   }
 
-
-  override def postRollBackSplit(ctx: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
-//    rollbackSplitIndex()
-  }
-
-
-  override def preSplitAfterPONR(ctx: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
-    prepareSplitIndexAfterPONR()
-  }
-
-  override def postSplit(e: ObserverContext[RegionCoprocessorEnvironment], l: Region, r: Region): Unit = {
-//    awaitSplitIndexComplete(l,r)
-  }
-
-
-  override def postCompleteSplit(ctx: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
-  }
   override def start(e: CoprocessorEnvironment): Unit = {
     e match{
       case re: RegionCoprocessorEnvironment=>

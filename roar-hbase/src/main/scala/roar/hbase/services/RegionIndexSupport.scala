@@ -3,13 +3,9 @@ package roar.hbase.services
 import java.io.File
 
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hbase.client.{Get, Delete, Result}
+import org.apache.hadoop.hbase.client.{Delete, Get, Result}
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
-import org.apache.hadoop.hbase.protobuf.generated.AdminProtos
-import org.apache.hadoop.hbase.regionserver.Region
 import org.apache.hadoop.hbase.util.FSUtils
-import org.apache.hadoop.hbase.zookeeper.ZKUtil
-import org.apache.hadoop.hbase.{HRegionInfo, MetaTableAccessor}
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.index._
 import org.apache.lucene.store.FSDirectory
@@ -34,7 +30,6 @@ trait RegionIndexSupport {
   protected var indexWriterOpt:Option[IndexWriter] = None
   protected var rd:ResourceDefinition = _
   private var flushIndexFuture:Future[Unit] = _
-  private var splitterOpt:Option[Future[Unit]] = _
 
   protected def openIndexWriter():Unit= {
     val tableName = coprocessorEnv.getRegion.getTableDesc.getTableName
@@ -109,10 +104,12 @@ trait RegionIndexSupport {
     }
   }
 
+
   protected def flushIndex(): Unit ={
     //commit index to disk or dfs
     indexWriterOpt.foreach(_.commit())
   }
+  /*
   protected def prepareSplitIndexAfterPONR(): Unit ={
     indexWriterOpt foreach { indexWriter =>
       //fetch daughters info from meta table
@@ -158,6 +155,11 @@ trait RegionIndexSupport {
       Await.result(f,Duration.Inf)
       info("finish to split index")
     }
+  }
+  */
+
+  protected def maybeStopSplit: Boolean ={
+    indexWriterOpt.isDefined
   }
 
   protected def closeIndex():Unit={

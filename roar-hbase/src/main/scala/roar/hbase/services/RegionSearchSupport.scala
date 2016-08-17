@@ -100,7 +100,7 @@ trait RegionSearchSupport extends QueryParserSupport with SearcherManagerSupport
     }
 
   }
-  protected def mybeRefresh(): Unit ={
+  protected def maybeRefresh(): Unit ={
     searcherManagerOpt.foreach(_.maybeRefresh)
   }
   @tailrec

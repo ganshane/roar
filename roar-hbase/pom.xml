@@ -58,6 +58,13 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-grouping -->
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-grouping</artifactId>
+      <version>5.5.2</version>
+      <scope>provided</scope>
+    </dependency>
 
     <!-- solr -->
     <dependency>

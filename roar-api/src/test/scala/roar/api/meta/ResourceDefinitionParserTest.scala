@@ -2,8 +2,11 @@
 // site: http://www.ganshane.com
 package roar.api.meta
 
+import javax.xml.bind.annotation.{XmlElement, XmlRootElement}
+
 import org.junit.{Assert, Test}
 import roar.api.meta.ResourceDefinition.ResourceDynamicType
+import roar.protocol.generated.RoarProtos.SearchRequest
 import stark.utils.services.XmlLoader
 
 /**
@@ -11,6 +14,14 @@ import stark.utils.services.XmlLoader
  * @author jcai
  */
 class ResourceDefinitionParserTest {
+  @Test
+  def test_protobuf: Unit ={
+    val request = SearchRequest.newBuilder()
+    request.setTableName("asdf")
+    val test = new TestObj
+    test.request = request.build()
+    println(XmlLoader.toXml(test))
+  }
   @Test
   def parse() {
     val fromRd = new ResourceDefinition
@@ -49,4 +60,10 @@ class ResourceDefinitionParserTest {
     Assert.assertEquals(1, rel.properties.size)
     Assert.assertEquals("sfzh", rel.properties.get(0).name)
   }
+}
+@XmlRootElement(name="test")
+//@XmlAccessorType(XmlAccessType.FIELD)
+class TestObj{
+  @XmlElement(name="request")
+  var request:SearchRequest = _
 }

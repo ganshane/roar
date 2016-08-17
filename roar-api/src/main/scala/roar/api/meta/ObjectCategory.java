@@ -8,5 +8,5 @@ package roar.api.meta;
  * @since 2015-07-13
  */
 public enum ObjectCategory {
-    Person,Car,Mobile,Mac,QQ,Weixin;
+    Person,Car,Mobile,Mac,QQ,Weixin,IMSI,Other;
 }
