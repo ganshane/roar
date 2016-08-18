@@ -7,6 +7,7 @@ import org.apache.hadoop.hbase.regionserver.wal.WALEdit
 import org.apache.hadoop.hbase.regionserver.{Store, StoreFile}
 import org.apache.hadoop.hbase.wal.WALKey
 import org.apache.hadoop.hbase.{CellUtil, CoprocessorEnvironment, HRegionInfo}
+import roar.hbase.internal.RegionSearchSupport
 import stark.utils.services.LoggerSupport
 
 /**

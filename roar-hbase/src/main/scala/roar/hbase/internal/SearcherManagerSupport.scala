@@ -20,7 +20,7 @@ trait SearcherManagerSupport {
   //全局搜索对象
   protected def getSearcherManager: SearcherManager
 
-  protected def doInSearcher[T](fun: InternalIndexSearcher => T): T = {
+  private[roar] def doInSearcher[T](fun: InternalIndexSearcher => T): T = {
     val sm = getSearcherManager
     if (semaphore.tryAcquire(60, TimeUnit.SECONDS)) {
       try {

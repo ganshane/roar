@@ -4,7 +4,7 @@
    site: http://www.ganshane.com
 -->
 
-<resource name="czrk" cn_name="常住人口" dynamic="true" share="true">
+<resource name="trace" cn_name="常住人口" dynamic="true" share="true">
   <index>
     <!--索引分词器-->
     <analyzer>Standard</analyzer>

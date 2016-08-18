@@ -2,10 +2,12 @@ package roar.hbase.services
 
 import com.google.protobuf.{RpcCallback, RpcController, Service}
 import org.apache.hadoop.hbase.coprocessor.CoprocessorService
+import roar.hbase.internal.RegionSearchSupport
 import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
 
 /**
   * rpc service for index search
+ *
   * @author <a href="mailto:jcai@ganshane.com">Jun Tsai</a>
   * @since 2016-07-05
   */

@@ -1,15 +1,19 @@
 package roar.hbase.internal
 
+import java.io.Closeable
 import java.util
 
-import org.apache.hadoop.hbase.Cell
 import org.apache.hadoop.hbase.client.Result
+import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
+import org.apache.hadoop.hbase.regionserver.Region
 import org.apache.hadoop.hbase.util.Bytes
-import org.junit.{Assert, Test}
+import org.apache.hadoop.hbase._
+import org.apache.lucene.index.IndexWriter
+import org.junit.{After, Assert, Before, Test}
 import org.mockito.Mockito
 import roar.api.meta.ResourceDefinition
-import roar.hbase.services.DocumentCreator
-import stark.utils.services.XmlLoader
+import roar.hbase.services.{DocumentCreator, DocumentSource, RegionCoprocessorEnvironmentSupport, RegionIndexSupport}
+import stark.utils.services.{LoggerSupport, XmlLoader}
 
 /**
   * test
@@ -18,24 +22,32 @@ import stark.utils.services.XmlLoader
   * @since 2016-08-18
   */
 class DocumentCreatorImplTest {
+
   @Test
   def test_trace: Unit ={
-    val traceRd = XmlLoader.parseXML[ResourceDefinition](getClass.getResourceAsStream("/trace.xml"), None)
-    val createorSource = new DocumentSourceImpl(new util.HashMap[String,DocumentCreator]())
     val result = Mockito.mock(classOf[Result])
-    var docOpt = createorSource.newDocument(traceRd,101L,result)
-    Assert.assertTrue(docOpt.isEmpty)
-
     Mockito.when(result.getRow).thenReturn("first".getBytes())
+    searcher.index(1L,result)
+    Assert.assertEquals(0,searcher.numDoc)
+
     createCell(result,"object_id",123)
     createCell(result,"start_time",1234)
     createCell(result,"end_time",1237)
     createCell(result,"trace_type","test")
 
-    docOpt = createorSource.newDocument(traceRd,101L,result)
-    Assert.assertTrue(docOpt.isDefined)
+    searcher.index(1L,result)
+    searcher.maybeRefresh()
+    Assert.assertEquals(1,searcher.numDoc)
 
+
+
+    searcher.doInSearcher{s=>
+      val q = "object_id:123"
+      val query = searcher.parseQuery(q)
+      Assert.assertEquals(1,s.search(query,10).totalHits)
+    }
   }
+
   private def createCell(result: Result,field:String,value:Int): Cell ={
     val v = Bytes.toBytes(value)
     createCell(result, field, v)
@@ -53,5 +65,54 @@ class DocumentCreatorImplTest {
   private def createCell(result: Result, field:String, value:String): Cell={
     val v = Bytes.toBytes(value)
     createCell(result, field, v)
+  }
+  var traceRd:ResourceDefinition  = _
+
+  var indexWriter:IndexWriter =  _
+
+  var documentSource:DocumentSource  = _
+
+  var searcher:RegionSearchSupport with QueryParserSupport with RegionIndexSupport with RegionCoprocessorEnvironmentSupport with Closeable = _
+
+  @Before
+  def setup: Unit ={
+
+    traceRd = XmlLoader.parseXML[ResourceDefinition](getClass.getResourceAsStream("/trace.xml"), None)
+    documentSource = new DocumentSourceImpl(new util.HashMap[String,DocumentCreator]())
+    /*
+    val conf = new IndexWriterConfig(RoarHbaseConstants.defaultAnalyzer)
+    val ramDir = new RAMDirectory()
+    indexWriter = RandomIndexWriter.mockIndexWriter(ramDir,conf,new Random)
+    */
+
+
+    searcher = new RegionSearchSupport with QueryParserSupport with RegionIndexSupport with RegionCoprocessorEnvironmentSupport with LoggerSupport with Closeable{
+      val env = Mockito.mock(classOf[RegionCoprocessorEnvironment])
+      val region = Mockito.mock(classOf[Region])
+      Mockito.when(env.getRegion).thenReturn(region)
+      val tableDesc = Mockito.mock(classOf[HTableDescriptor])
+      Mockito.when(region.getTableDesc).thenReturn(tableDesc)
+      Mockito.when(tableDesc.getTableName).thenReturn(TableName.valueOf("trace"))
+
+      val regionInfo = Mockito.mock(classOf[HRegionInfo])
+      Mockito.when(env.getRegionInfo).thenReturn(regionInfo)
+      Mockito.when(regionInfo.getEncodedName).thenReturn("trace")
+
+      val conf = HBaseConfiguration.create()
+      Mockito.when(env.getConfiguration).thenReturn(conf)
+
+      @inline
+      override def coprocessorEnv: RegionCoprocessorEnvironment = env
+
+      def close() = getSearcherManager.close()
+    }
+
+    searcher.openIndexWriter()
+    searcher.openSearcherManager()
+  }
+  @After
+  def teardown: Unit ={
+    searcher.closeSearcher()
+    searcher.closeIndex()
   }
 }

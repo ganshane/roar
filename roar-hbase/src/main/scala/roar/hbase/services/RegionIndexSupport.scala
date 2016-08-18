@@ -35,7 +35,7 @@ trait RegionIndexSupport {
   protected var rd:ResourceDefinition = _
   private var flushIndexFuture:Future[Unit] = _
 
-  protected def openIndexWriter():Unit= {
+  private[hbase] def openIndexWriter():Unit= {
     val tableName = coprocessorEnv.getRegion.getTableDesc.getTableName
     val regionEncodedName = coprocessorEnv.getRegionInfo.getEncodedName
     val resourceDefineOpt = RegionServerData.regionServerResources.get(tableName.getNameAsString)
@@ -166,7 +166,7 @@ trait RegionIndexSupport {
     indexWriterOpt.isDefined
   }
 
-  protected def closeIndex():Unit={
+  private[hbase] def closeIndex():Unit={
     indexWriterOpt.foreach{indexWriter=>
       logger.info("closing index writer...")
       IOUtils.closeStream(indexWriter)

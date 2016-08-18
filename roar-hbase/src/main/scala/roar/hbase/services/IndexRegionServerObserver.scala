@@ -21,8 +21,10 @@ import scala.collection.mutable.ArrayBuffer
   * @since 2016-07-06
   */
 private[services] object RegionServerData extends LoggerSupport{
+  //init trace resource
+  val traceRd = XmlLoader.parseXML[ResourceDefinition](getClass.getResourceAsStream("/trace.xml"), None)
   @volatile
-  var regionServerResources = Map[String, ResourceDefinition]()
+  var regionServerResources = Map[String, ResourceDefinition](traceRd.name->traceRd)
   //create document source
   val documentSource = new DocumentSourceImpl(new java.util.HashMap[String, DocumentCreator]())
   var resourcesPath:String = _

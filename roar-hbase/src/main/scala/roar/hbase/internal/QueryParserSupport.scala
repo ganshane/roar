@@ -65,7 +65,7 @@ trait QueryParserSupport {
     analyzer = new PerFieldAnalyzerWrapper(this.analyzerObj, fieldAnalyzers)
   }
 
-  protected def createParser(fun: Option[PartialFunction[(String, String), Query]] = None) = {
+  private[roar] def createParser(fun: Option[PartialFunction[(String, String), Query]] = None) = {
     val funIsDefine = fun.isDefined
     val parser = new MultiFieldQueryParser(this.defaultSearchFields, analyzer, boostProperties) {
 
@@ -147,7 +147,7 @@ trait QueryParserSupport {
 
     parser
   }
-  protected def parseQuery(q: String) = {
+  private[roar] def parseQuery(q: String) = {
     val parser = createParser()
     try {
       parser.parse(q)
