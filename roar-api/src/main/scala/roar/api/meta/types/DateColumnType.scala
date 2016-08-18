@@ -35,7 +35,7 @@ class DateColumnType extends DataColumnType[Long] {
 
   def createIndexField(value: Long, cd: ResourceProperty) = {
     val valueConverted = convertDateAsInt(value)
-    (new IntField(cd.name, valueConverted, IntField.TYPE_NOT_STORED),Some(new NumericDocValuesField(cd.name,value)))
+    (new IntField(cd.name, valueConverted, IntField.TYPE_NOT_STORED),if(cd.sort) Some(new NumericDocValuesField(cd.name,value)) else None)
   }
 
   def setIndexValue(f: (Field,Option[Field]), value: Long, cd: ResourceProperty) {

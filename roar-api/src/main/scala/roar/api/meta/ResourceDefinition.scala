@@ -186,6 +186,9 @@ object ResourceDefinition {
 //    @deprecated(since = "5.1",message = "使用object_category进行代替")
 //    @XmlAttribute(name = "mark")
 //    var mark: Int = 0
+
+    @XmlAttribute(name = "sort")
+    var sort: Boolean = false
     @XmlAttribute(name = "boost")
     var boost: Float = 1.0f
     @XmlAttribute(name = "object_category")

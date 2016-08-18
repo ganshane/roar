@@ -34,7 +34,7 @@ class IntColumnType extends DataColumnType[Int] {
   }
 
   def createIndexField(value: Int, cd: ResourceProperty) =
-    (new IntField(cd.name, value, IntField.TYPE_NOT_STORED),Some(new NumericDocValuesField(cd.name,value)))
+    (new IntField(cd.name, value, IntField.TYPE_NOT_STORED), if(cd.sort) Some(new NumericDocValuesField(cd.name, value)) else None)
 
   def setIndexValue(f: (Field,Option[Field]), value: Int, cd: ResourceProperty) {
     f._1.setIntValue(value)

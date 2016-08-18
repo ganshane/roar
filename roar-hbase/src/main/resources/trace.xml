@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+   Copyright 2012,2013,2015,2016 the original author or authors. All rights reserved.
+   site: http://www.ganshane.com
+-->
+
+<resource name="czrk" cn_name="常住人口" dynamic="true" share="true">
+  <index>
+    <!--索引分词器-->
+    <analyzer>Standard</analyzer>
+  </index>
+  <search>
+    <!--搜索分词器-->
+    <analyzer>Standard</analyzer>
+  </search>
+  <sync>
+  </sync>
+  <properties>
+    <!--定义数据同步各字段属性 name:字段名 list_name:列表显示名称 index_type:索引类型 default_query:是否默认查询字段(分字段查询) dic:字典规范词类别 primary_key:是否主键(唯一) modify_key:是否增量字段(用于同步数据识别增量) format:日期格式化格式-->
+    <property family="info" name="object_id" cn_name="对象ID" column_type="Int" sort="true"/>
+    <property family="info" name="start_time" cn_name="开始时间" column_type="Int" sort="true"/>
+    <property family="info" name="end_time" cn_name="结束时间" column_type="Int"/>
+    <property family="info" name="trace_type" cn_name="轨迹类型" column_type="Key"/>
+    <property family="info" name="geo" cn_name="经纬度" column_type="Text"/>
+    <property family="info" name="district" cn_name="行政区划" column_type="Int"/>
+  </properties>
+</resource>

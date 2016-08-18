@@ -25,7 +25,6 @@ import scala.collection.JavaConversions._
 class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) extends DocumentSource with LoggerSupport {
   //sid field
   private val sidField = new BinaryDocValuesField(RoarHbaseConstants.OBJECT_ID_PAYLOAD_FIELD, new BytesRef)
-//  private val oidField = new NumericDocValuesField(RoarHbaseConstants.OID_FILED_NAME, 0)
   private val cacheCreator = new ConcurrentHashMap[String, DocumentCreator]()
   private val idField = new StringField(RoarHbaseConstants.OBJECT_ID_FIELD_NAME,"", Field.Store.NO)
   //TODO 调整为INT类型

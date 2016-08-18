@@ -27,7 +27,7 @@ class LongColumnType extends DataColumnType[Long] {
     if (value.isDefined) Some(value.get.toString) else None
 
   def createIndexField(value: Long, cd: ResourceProperty) =
-    (new LongField(cd.name, value, LongField.TYPE_NOT_STORED),Some(new NumericDocValuesField(cd.name,value)))
+    (new LongField(cd.name, value, LongField.TYPE_NOT_STORED),if(cd.sort) Some(new NumericDocValuesField(cd.name,value)) else None)
 
   def setIndexValue(f: (Field,Option[Field]), value: Long, cd: ResourceProperty) {
     f._1.setLongValue(value)

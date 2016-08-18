@@ -261,6 +261,11 @@
             <xs:documentation>API的输出格式,主要用于日期类型</xs:documentation>
           </xs:annotation>
         </xs:attribute>
+        <xs:attribute type="xs:boolean" name="sort" use="optional" default="false">
+          <xs:annotation>
+            <xs:documentation>该字段是否参入排序查询</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
         <xs:attribute type="xs:float" name="boost" use="optional">
           <xs:annotation>
             <xs:documentation>用来调整某一字段的影响力,设置超过1，将使得改字段的影响力加重</xs:documentation>
