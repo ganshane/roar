@@ -66,13 +66,13 @@ class IndexRegionObserverTest {
   @Test
   def test_put: Unit ={
     var p = new Put(row1)
-    p.addColumn(family, xm, xm)
+    p.add(family, xm, xm)
     region.put(p)
 
     Assert.assertEquals(1,query("xm:xm").getCount)
 
     p = new Put(row1)
-    p.addColumn(family, xb, xb)
+    p.add(family, xb, xb)
     region.put(p)
     Assert.assertEquals(1,query("xb:xb").getCount)
     //当再次put某个字段的时候,xm未被索引
@@ -82,7 +82,7 @@ class IndexRegionObserverTest {
     Assert.assertEquals(0,query("xm:xm").getCount)
 
     //test flush
-    region.flush(true)
+    region.flushcache() ;//.flush(true)
 
     /*
     val channel = t.coprocessorService(row1)

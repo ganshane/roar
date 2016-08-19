@@ -48,17 +48,17 @@
       <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-client</artifactId>
-        <version>1.1.5</version>
+        <version>${hbase-release-version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-server</artifactId>
-        <version>1.1.5</version>
+        <version>${hbase-release-version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-testing-util</artifactId>
-        <version>1.1.5</version>
+        <version>${hbase-release-version}</version>
         <scope>test</scope>
       </dependency>
       <!-- stark -->
@@ -553,6 +553,7 @@
     <proguard-release-version>5.1</proguard-release-version>
     <axis-release-version>1.6.4</axis-release-version>
     <spring-release-version>4.2.4.RELEASE</spring-release-version>
+    <hbase-release-version>0.98.20-hadoop2</hbase-release-version>
     <PermGen>64m</PermGen>
     <MaxPermGen>512m</MaxPermGen>
     <CodeCacheSize>512m</CodeCacheSize>

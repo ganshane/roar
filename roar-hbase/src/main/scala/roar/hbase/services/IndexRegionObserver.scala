@@ -3,9 +3,8 @@ package roar.hbase.services
 import org.apache.hadoop.hbase.client.{Delete, Durability, Get, Put}
 import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, CoprocessorException, ObserverContext, RegionCoprocessorEnvironment}
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
-import org.apache.hadoop.hbase.regionserver.wal.WALEdit
+import org.apache.hadoop.hbase.regionserver.wal.{HLogKey, WALEdit}
 import org.apache.hadoop.hbase.regionserver.{Store, StoreFile}
-import org.apache.hadoop.hbase.wal.WALKey
 import org.apache.hadoop.hbase.{CellUtil, CoprocessorEnvironment, HRegionInfo}
 import roar.hbase.internal.RegionSearchSupport
 import stark.utils.services.LoggerSupport
@@ -73,7 +72,9 @@ class IndexRegionObserver extends BaseRegionObserver
     maybeRefresh()
   }
 
-  override def postWALRestore(env: ObserverContext[_ <: RegionCoprocessorEnvironment], info: HRegionInfo, logKey: WALKey, logEdit: WALEdit): Unit = {
+
+  override def postWALRestore(env: ObserverContext[RegionCoprocessorEnvironment], info: HRegionInfo, logKey: HLogKey, logEdit: WALEdit): Unit = {
+//  override def postWALRestore(env: ObserverContext[_ <: RegionCoprocessorEnvironment], info: HRegionInfo, logKey: WALKey, logEdit: WALEdit): Unit = {
     val cells = logEdit.getCells
     val it = cells.iterator()
     while(it.hasNext){

@@ -5,7 +5,7 @@ import java.util
 
 import org.apache.hadoop.hbase.client.Result
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
-import org.apache.hadoop.hbase.regionserver.Region
+import org.apache.hadoop.hbase.regionserver.HRegion
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase._
 import org.apache.lucene.index.IndexWriter
@@ -88,7 +88,7 @@ class DocumentCreatorImplTest {
 
     searcher = new RegionSearchSupport with QueryParserSupport with RegionIndexSupport with RegionCoprocessorEnvironmentSupport with LoggerSupport with Closeable{
       val env = Mockito.mock(classOf[RegionCoprocessorEnvironment])
-      val region = Mockito.mock(classOf[Region])
+      val region = Mockito.mock(classOf[HRegion])
       Mockito.when(env.getRegion).thenReturn(region)
       val tableDesc = Mockito.mock(classOf[HTableDescriptor])
       Mockito.when(region.getTableDesc).thenReturn(tableDesc)

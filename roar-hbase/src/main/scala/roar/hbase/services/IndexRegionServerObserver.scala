@@ -21,10 +21,8 @@ import scala.collection.mutable.ArrayBuffer
   * @since 2016-07-06
   */
 private[services] object RegionServerData extends LoggerSupport{
-  //init trace resource
-  val traceRd = XmlLoader.parseXML[ResourceDefinition](getClass.getResourceAsStream("/trace.xml"), None)
   @volatile
-  var regionServerResources = Map[String, ResourceDefinition](traceRd.name->traceRd)
+  var regionServerResources = Map[String, ResourceDefinition]()
   //create document source
   val documentSource = new DocumentSourceImpl(new java.util.HashMap[String, DocumentCreator]())
   var resourcesPath:String = _
@@ -35,10 +33,13 @@ private[services] object RegionServerData extends LoggerSupport{
       val buffer = new ArrayBuffer[ResourceDefinition](resources.size())
       while (it.hasNext) {
         val res = it.next()
-        val resPath = ZKUtil.joinZNode(resourcesPath, res)
-        val data = ZKUtil.getDataAndWatch(zkw, resPath)
-        val rdOpt = parseXML(data)
-        rdOpt.foreach(buffer +=)
+        //only support trace and behaviour resource
+        if(res == RoarHbaseConstants.BEHAVIOUR_RESOURCE || res== RoarHbaseConstants.TRACE_RESOURCE) {
+          val resPath = ZKUtil.joinZNode(resourcesPath, res)
+          val data = ZKUtil.getDataAndWatch(zkw, resPath)
+          val rdOpt = parseXML(data)
+          rdOpt.foreach(buffer +=)
+        }
       }
 
       regionServerResources = buffer.map(x => (x.name, x)).toMap

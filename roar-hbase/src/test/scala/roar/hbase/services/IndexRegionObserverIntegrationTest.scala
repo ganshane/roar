@@ -1,8 +1,5 @@
 package roar.hbase.services
 
-import java.io.IOException
-
-import junit.framework.Assert._
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client._
@@ -71,9 +68,12 @@ class IndexRegionObserverIntegrationTest extends LoggerSupport{
   @Test
   def testSimple: Unit ={
 
-    val t = util.getConnection.getTable(tableName)
+//    val t = util.get..getConnection.getTable(tableName)
+
+    val t = new HTable(util.getConfiguration(), tableName);
+
     val p = new Put(row1)
-    p.addColumn(family, xm, xm)
+    p.add(family, xm, xm)
     // before HBASE-4331, this would throw an exception
     t.put(p)
 
@@ -113,6 +113,7 @@ class IndexRegionObserverIntegrationTest extends LoggerSupport{
 //    Thread.currentThread().join()
   }
 
+  /*
   @throws(classOf[IOException])
   private def checkRowAndDelete(t: Table, row: Array[Byte], count: Int) {
     val g: Get = new Get(row)
@@ -121,6 +122,7 @@ class IndexRegionObserverIntegrationTest extends LoggerSupport{
     val d: Delete = new Delete(row)
     t.delete(d)
   }
+  */
   /*
   private def checkRowAndDelete(t:Table , row:Array[Byte], count:Int){
     val g = new Get(row)

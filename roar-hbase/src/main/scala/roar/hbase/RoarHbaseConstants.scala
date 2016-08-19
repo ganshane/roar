@@ -26,4 +26,8 @@ object RoarHbaseConstants {
   final val FACET_COUNT = "_count"
   final val DYNAMIC_DESC = "_desc"
 
+
+  //支持的资源定义
+  final val TRACE_RESOURCE="trace" //轨迹
+  final val BEHAVIOUR_RESOURCE="behaviour" //行为
 }

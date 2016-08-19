@@ -1,9 +1,8 @@
 package roar.api.services
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.client.coprocessor.Batch.{Call, Callback}
 import org.apache.hadoop.hbase.client._
+import org.apache.hadoop.hbase.client.coprocessor.Batch.{Call, Callback}
 import org.apache.hadoop.hbase.ipc.{BlockingRpcCallback, ServerRpcController}
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.search.{ScoreDoc, TopDocs}
@@ -76,6 +75,21 @@ class RoarClient(conf:Configuration) {
     }
   }
 
+  private def doInTable[T](tableName:String)(tableAction:(HTableInterface)=>T):T={
+    val connection = HConnectionManager.createConnection(conf)
+    try{
+      val table = connection.getTable(tableName)
+      try{
+        //find table
+        tableAction(table)
+      }finally{
+        IOUtils.closeStream(table)
+      }
+    }finally{
+     IOUtils.closeStream(connection)
+    }
+  }
+  /*
   private def doInTable[T](tableName:String)(tableAction:(Table)=>T):T={
     var conn:Connection = null
     try {
@@ -93,6 +107,7 @@ class RoarClient(conf:Configuration) {
       IOUtils.closeStream(conn)
     }
   }
+  */
   private def internalMerge(offset:Int,size:Int,list:List[SearchResponse]):SearchResponse={
     var shardIdx = 0
     var totalRecordNum = 0
