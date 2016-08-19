@@ -15,14 +15,6 @@ import stark.utils.services.XmlLoader
  */
 class ResourceDefinitionParserTest {
   @Test
-  def test_protobuf: Unit ={
-    val request = SearchRequest.newBuilder()
-    request.setTableName("asdf")
-    val test = new TestObj
-    test.request = request.build()
-    println(XmlLoader.toXml(test))
-  }
-  @Test
   def parse() {
     val fromRd = new ResourceDefinition
     val property = new ResourceDefinition.ResourceTraitProperty
