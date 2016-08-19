@@ -94,7 +94,7 @@ class IndexRegionServerObserver extends BaseRegionServerObserver with LoggerSupp
         val rss = rssEnv.getRegionServerServices
         val zkw = rss.getZooKeeper
         zkw.registerListener(new ResourceListener(zkw))
-        info("watching {}", resourcesPath)
+        info("{} watching {}", zkw,resourcesPath)
         while (ZKUtil.checkExists(zkw, resourcesPath) == -1) {
           ZKUtil.createWithParents(zkw, resourcesPath)
         }
