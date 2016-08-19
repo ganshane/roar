@@ -12,7 +12,7 @@ import org.apache.lucene.index.IndexWriter
 import org.junit.{After, Assert, Before, Test}
 import org.mockito.Mockito
 import roar.api.meta.ResourceDefinition
-import roar.hbase.services.{DocumentCreator, DocumentSource, RegionCoprocessorEnvironmentSupport, RegionIndexSupport}
+import roar.hbase.services._
 import stark.utils.services.{LoggerSupport, XmlLoader}
 
 /**
@@ -78,6 +78,7 @@ class DocumentCreatorImplTest {
   def setup: Unit ={
 
     traceRd = XmlLoader.parseXML[ResourceDefinition](getClass.getResourceAsStream("/trace.xml"), None)
+    RegionServerData.regionServerResources = Map("trace"->traceRd)
     documentSource = new DocumentSourceImpl(new util.HashMap[String,DocumentCreator]())
     /*
     val conf = new IndexWriterConfig(RoarHbaseConstants.defaultAnalyzer)

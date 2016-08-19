@@ -20,7 +20,7 @@ import scala.collection.mutable.ArrayBuffer
   * @author <a href="mailto:jcai@ganshane.com">Jun Tsai</a>
   * @since 2016-07-06
   */
-private[services] object RegionServerData extends LoggerSupport{
+private[hbase] object RegionServerData extends LoggerSupport{
   @volatile
   var regionServerResources = Map[String, ResourceDefinition]()
   //create document source
