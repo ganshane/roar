@@ -1,12 +1,14 @@
 package roar.api.services
 
+import java.util.concurrent.CopyOnWriteArrayList
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client._
-import org.apache.hadoop.hbase.client.coprocessor.Batch.{Call, Callback}
-import org.apache.hadoop.hbase.ipc.{BlockingRpcCallback, ServerRpcController}
+import org.apache.hadoop.hbase.client.coprocessor.Batch.Callback
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.search.{ScoreDoc, TopDocs}
 import org.apache.lucene.util.PriorityQueue
+import org.slf4j.LoggerFactory
 import roar.protocol.generated.RoarProtos.SearchResponse.Row
 import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
 
@@ -17,6 +19,7 @@ import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, Se
   * @since 2016-07-09
   */
 class RoarClient(conf:Configuration) {
+  private val logger = LoggerFactory getLogger getClass
   //share one connection
   private val connection = HConnectionManager.createConnection(conf)
   /**
@@ -39,7 +42,19 @@ class RoarClient(conf:Configuration) {
 
       val searchRequest = searchRequestBuilder.build()
 
-      var list = List[SearchResponse]()
+      val list = new CopyOnWriteArrayList[SearchResponse]()
+
+      val response = SearchResponse.getDefaultInstance
+      table.batchCoprocessorService(IndexSearchService.getDescriptor.findMethodByName("query"),
+        searchRequest,null,null,response,new Callback[SearchResponse]() {
+          override def update(region: Array[Byte], row: Array[Byte], result: SearchResponse): Unit = {
+            if(result != null)
+              list.add(result)
+          }
+        })
+
+      logger.info("list size:{}",list.size())
+      /*
       table.coprocessorService(classOf[IndexSearchService], null, null,
         new Call[IndexSearchService, SearchResponse]() {
           override def call(instance: IndexSearchService): SearchResponse = {
@@ -57,7 +72,8 @@ class RoarClient(conf:Configuration) {
             list = result :: list
           }
         })
-      internalMerge(offset, size, list)
+        */
+      internalMerge(offset, size, list.toArray(new Array[SearchResponse](list.size())))
     }
   }
 
@@ -108,7 +124,7 @@ class RoarClient(conf:Configuration) {
     }
   }
   */
-  private def internalMerge(offset:Int,size:Int,list:List[SearchResponse]):SearchResponse={
+  private def internalMerge(offset:Int,size:Int,list:Array[SearchResponse]):SearchResponse={
     var shardIdx = 0
     var totalRecordNum = 0
     val docs = list.map{response=>
