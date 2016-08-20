@@ -7,6 +7,7 @@ import org.apache.hadoop.hbase.coprocessor.CoprocessorService
 import org.apache.hadoop.hbase.protobuf.ResponseConverter
 import roar.hbase.internal.RegionSearchSupport
 import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
+import stark.utils.services.LoggerSupport
 
 /**
   * rpc service for index search
@@ -15,25 +16,29 @@ import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, Se
   * @since 2016-07-05
   */
 trait IndexSearchServiceSupport extends CoprocessorService {
-  this:RegionSearchSupport =>
+  this:RegionSearchSupport with LoggerSupport =>
   private val emptyResponse = SearchResponse.newBuilder().setCount(0).setTotal(0).setMaxScore(0).build
 
   private val service = new IndexSearchService {
     override def query(controller: RpcController, request: SearchRequest, done: RpcCallback[SearchResponse]): Unit = {
       var finalResponse = emptyResponse
       try {
+        info("[{}] query {}",request.getTableName,request.getQ)
         val sortOpt = if (request.hasSort) Some(request.getSort) else None
         val responseOpt = search(request.getQ, sortOpt, request.getTopN)
         responseOpt match {
           case Some(response) =>
             finalResponse = response
           case None =>
+            error("[{}] response is empty",request.getTableName)
             controller.setFailed("response not found,resource not supported?")
         }
       }catch {
         case ioe:IOException =>
+          error("fail to execute query",ioe)
           ResponseConverter.setControllerException(controller,ioe)
-        case other=>
+        case other:Throwable=>
+          error("fail to execute query",other)
           controller.setFailed(other.toString)
       }finally{
         done.run(finalResponse)

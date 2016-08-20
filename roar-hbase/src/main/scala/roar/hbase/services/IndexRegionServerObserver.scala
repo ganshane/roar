@@ -2,10 +2,9 @@ package roar.hbase.services
 
 import java.util
 
-import org.apache.hadoop.hbase.{HConstants, CoprocessorEnvironment}
-import org.apache.hadoop.hbase.coprocessor.{CoprocessorException, BaseRegionServerObserver, RegionServerCoprocessorEnvironment}
+import org.apache.hadoop.hbase.coprocessor.{BaseRegionServerObserver, CoprocessorException, RegionServerCoprocessorEnvironment}
 import org.apache.hadoop.hbase.zookeeper.{ZKUtil, ZooKeeperListener, ZooKeeperWatcher}
-import org.apache.hadoop.io.IOUtils
+import org.apache.hadoop.hbase.{CoprocessorEnvironment, HConstants}
 import org.apache.lucene.store.LockFactory
 import org.apache.solr.common.util.NamedList
 import org.apache.solr.core.HdfsDirectoryFactory
@@ -14,7 +13,7 @@ import roar.hbase.RoarHbaseConstants
 import roar.hbase.internal.DocumentSourceImpl
 import roar.hbase.services.RegionServerData.ResourceListener
 import stark.utils.StarkUtilsConstants
-import stark.utils.services.{StarkException, LoggerSupport, XmlLoader}
+import stark.utils.services.{LoggerSupport, StarkException, XmlLoader}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -38,6 +37,7 @@ private[hbase] object RegionServerData extends LoggerSupport{
       }
     }
     val params = new NamedList[String]()
+    params.add(HdfsDirectoryFactory.BLOCKCACHE_GLOBAL,"true")
     factory.init(params)
     factory
   }
@@ -124,6 +124,7 @@ class IndexRegionServerObserver extends BaseRegionServerObserver with LoggerSupp
   }
 
   override def stop(env: CoprocessorEnvironment): Unit = {
-    IOUtils.closeStream(RegionServerData.directoryFactory)
+//    IOUtils.closeStream(RegionServerData.directoryFactory)
   }
+
 }
