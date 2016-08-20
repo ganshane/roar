@@ -34,6 +34,7 @@
         </exclusion>
       </exclusions>
     </dependency>
+
     <!-- hbase -->
     <dependency>
       <groupId>org.apache.hbase</groupId>
@@ -99,10 +100,12 @@
           <groupId>com.google.protobuf</groupId>
           <artifactId>protobuf-java</artifactId>
         </exclusion>
+        <!--
         <exclusion>
           <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
           <artifactId>concurrentlinkedhashmap-lru</artifactId>
         </exclusion>
+        -->
         <exclusion>
           <groupId>com.spatial4j</groupId>
           <artifactId>spatial4j</artifactId>

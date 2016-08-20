@@ -8,8 +8,9 @@ import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.util.FSUtils
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.index._
-import org.apache.lucene.store.FSDirectory
-import org.apache.solr.store.hdfs.HdfsDirectory
+import org.apache.lucene.store.{Directory, FSDirectory}
+import org.apache.solr.core.DirectoryFactory
+import org.apache.solr.core.DirectoryFactory.DirContext
 import roar.api.meta.ResourceDefinition
 import roar.hbase.RoarHbaseConstants
 import stark.utils.services.LoggerSupport
@@ -34,6 +35,7 @@ trait RegionIndexSupport {
   protected var indexWriterOpt:Option[IndexWriter] = None
   protected var rd:ResourceDefinition = _
   private var flushIndexFuture:Future[Unit] = _
+  private var hdfsDir:Option[Directory] = None
 
   private[hbase] def openIndexWriter():Unit= {
     val tableName = coprocessorEnv.getRegion.getTableDesc.getTableName
@@ -53,8 +55,12 @@ trait RegionIndexSupport {
         val directory =
         if(indexPath.toString.startsWith("file"))
           FSDirectory.open(new File(indexPath.toUri).toPath)
-        else
-         new HdfsDirectory(indexPath, HdfsLockFactoryInHbase, coprocessorEnv.getConfiguration)
+        else {
+          val dir = RegionServerData.directoryFactory.get(indexPath.toString, DirContext.DEFAULT, DirectoryFactory.LOCK_TYPE_HDFS)
+          hdfsDir = Some(dir)
+          dir
+        }
+         //new HdfsDirectory(indexPath, HdfsLockFactoryInHbase, coprocessorEnv.getConfiguration)
 
         val config = new IndexWriterConfig(RoarHbaseConstants.defaultAnalyzer)
         val mergePolicy = new LogByteSizeMergePolicy()
@@ -170,6 +176,12 @@ trait RegionIndexSupport {
     indexWriterOpt.foreach{indexWriter=>
       logger.info("[{}] closing index writer...",rd.name)
       IOUtils.closeStream(indexWriter)
+    }
+  }
+  protected def closeDirectory():Unit={
+    hdfsDir.foreach{dir=>
+      RegionServerData.directoryFactory.release(dir)
+//      RegionServerData.directoryFactory.doneWithDirectory(dir)
     }
   }
 }

@@ -51,6 +51,7 @@ class IndexRegionObserver extends BaseRegionObserver
   override def postClose(e: ObserverContext[RegionCoprocessorEnvironment], abortRequested: Boolean): Unit = {
     closeSearcher()
     closeIndex()
+    closeDirectory()
   }
   override def postPut(e: ObserverContext[RegionCoprocessorEnvironment], put: Put, edit: WALEdit, durability: Durability): Unit = {
     /**

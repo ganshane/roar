@@ -5,6 +5,10 @@ import java.util
 import org.apache.hadoop.hbase.{HConstants, CoprocessorEnvironment}
 import org.apache.hadoop.hbase.coprocessor.{CoprocessorException, BaseRegionServerObserver, RegionServerCoprocessorEnvironment}
 import org.apache.hadoop.hbase.zookeeper.{ZKUtil, ZooKeeperListener, ZooKeeperWatcher}
+import org.apache.hadoop.io.IOUtils
+import org.apache.lucene.store.LockFactory
+import org.apache.solr.common.util.NamedList
+import org.apache.solr.core.HdfsDirectoryFactory
 import roar.api.meta.ResourceDefinition
 import roar.hbase.RoarHbaseConstants
 import roar.hbase.internal.DocumentSourceImpl
@@ -26,6 +30,17 @@ private[hbase] object RegionServerData extends LoggerSupport{
   //create document source
   val documentSource = new DocumentSourceImpl(new java.util.HashMap[String, DocumentCreator]())
   var resourcesPath:String = _
+  lazy val directoryFactory = createHdfsDirectoryFactory()
+  private def createHdfsDirectoryFactory():HdfsDirectoryFactory={
+    val factory = new HdfsDirectoryFactory(){
+      override def createLockFactory(rawLockType: String): LockFactory = {
+        HdfsLockFactoryInHbase.instance
+      }
+    }
+    val params = new NamedList[String]()
+    factory.init(params)
+    factory
+  }
 
   def addResources(zkw:ZooKeeperWatcher,resources:util.List[String]): Unit ={
     if(resources != null) {
@@ -106,5 +121,9 @@ class IndexRegionServerObserver extends BaseRegionServerObserver with LoggerSupp
       case _ =>
         throw new CoprocessorException("Must be loaded on a region server!")
     }
+  }
+
+  override def stop(env: CoprocessorEnvironment): Unit = {
+    IOUtils.closeStream(RegionServerData.directoryFactory)
   }
 }
