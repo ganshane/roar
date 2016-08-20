@@ -2,6 +2,7 @@ package roar.hbase.services
 
 import org.apache.hadoop.hbase.client.{Delete, Durability, Get, Put}
 import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, CoprocessorException, ObserverContext, RegionCoprocessorEnvironment}
+import org.apache.hadoop.hbase.regionserver.HRegion.Operation
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
 import org.apache.hadoop.hbase.regionserver.wal.{HLogKey, WALEdit}
 import org.apache.hadoop.hbase.regionserver.{Store, StoreFile}
@@ -25,6 +26,9 @@ class IndexRegionObserver extends BaseRegionObserver
   private var _env:RegionCoprocessorEnvironment = _
 
   override def coprocessorEnv: RegionCoprocessorEnvironment = _env
+
+
+  override def postStartRegionOperation(ctx: ObserverContext[RegionCoprocessorEnvironment], op: Operation): Unit = super.postStartRegionOperation(ctx, op)
 
   override def postOpen(e: ObserverContext[RegionCoprocessorEnvironment]): Unit = {
     openIndexWriter()

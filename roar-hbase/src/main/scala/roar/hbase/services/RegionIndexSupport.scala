@@ -168,7 +168,7 @@ trait RegionIndexSupport {
 
   private[hbase] def closeIndex():Unit={
     indexWriterOpt.foreach{indexWriter=>
-      logger.info("closing index writer...")
+      logger.info("[{}] closing index writer...",rd.name)
       IOUtils.closeStream(indexWriter)
     }
   }

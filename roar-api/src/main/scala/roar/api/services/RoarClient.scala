@@ -17,7 +17,8 @@ import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, Se
   * @since 2016-07-09
   */
 class RoarClient(conf:Configuration) {
-
+  //share one connection
+  private val connection = HConnectionManager.createConnection(conf)
   /**
     * call full text search to hbase cluster
     *
@@ -76,7 +77,6 @@ class RoarClient(conf:Configuration) {
   }
 
   private def doInTable[T](tableName:String)(tableAction:(HTableInterface)=>T):T={
-    val connection = HConnectionManager.createConnection(conf)
     try{
       val table = connection.getTable(tableName)
       try{
@@ -86,7 +86,7 @@ class RoarClient(conf:Configuration) {
         IOUtils.closeStream(table)
       }
     }finally{
-     IOUtils.closeStream(connection)
+//     IOUtils.closeStream(connection)
     }
   }
   /*
