@@ -106,10 +106,10 @@ class IndexRegionObserverIntegrationTest extends LoggerSupport{
     Assert.assertEquals(1,response.getCount)
     Assert.assertArrayEquals(row1,response.getRow(0).getRowId.toByteArray)
 
-    t.close()
+//    t.close()
 
 
-    util.deleteTable(tableName)
+//    util.deleteTable(tableName)
 //    Thread.currentThread().join()
   }
 

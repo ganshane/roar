@@ -180,8 +180,9 @@ trait RegionIndexSupport {
   }
   protected def closeDirectory():Unit={
     hdfsDir.foreach{dir=>
+      RegionServerData.directoryFactory.doneWithDirectory(dir)
       RegionServerData.directoryFactory.release(dir)
-//      RegionServerData.directoryFactory.doneWithDirectory(dir)
+      IOUtils.closeStream(dir)
     }
   }
 }

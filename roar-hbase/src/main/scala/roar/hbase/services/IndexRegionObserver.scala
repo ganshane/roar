@@ -53,6 +53,7 @@ class IndexRegionObserver extends BaseRegionObserver
     closeIndex()
     closeDirectory()
   }
+
   override def postPut(e: ObserverContext[RegionCoprocessorEnvironment], put: Put, edit: WALEdit, durability: Durability): Unit = {
     /**
       * 因为两次put针对不同的column,在put中并未包含全部的信息,

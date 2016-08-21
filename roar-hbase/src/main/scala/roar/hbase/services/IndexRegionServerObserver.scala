@@ -38,6 +38,10 @@ private[hbase] object RegionServerData extends LoggerSupport{
     }
     val params = new NamedList[String]()
     params.add(HdfsDirectoryFactory.BLOCKCACHE_GLOBAL,"true")
+
+    val slabCount = System.getProperty(HdfsDirectoryFactory.BLOCKCACHE_SLAB_COUNT,"1")
+    params.add(HdfsDirectoryFactory.BLOCKCACHE_SLAB_COUNT,slabCount)
+
     factory.init(params)
     factory
   }
@@ -124,6 +128,10 @@ class IndexRegionServerObserver extends BaseRegionServerObserver with LoggerSupp
   }
 
   override def stop(env: CoprocessorEnvironment): Unit = {
+    info("closing region server observer")
+//    RegionServerData.directoryFactory.close()
+    //在关闭操作的时候,先关闭的是regionserver,然后在关闭region,所以此处关闭会出现错误
+//    RegionServerData.directoryFactory.close()
 //    IOUtils.closeStream(RegionServerData.directoryFactory)
   }
 
