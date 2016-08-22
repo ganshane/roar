@@ -4,7 +4,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client._
-import org.apache.hadoop.hbase.client.coprocessor.Batch.Callback
+import org.apache.hadoop.hbase.client.coprocessor.Batch.{Call, Callback}
+import org.apache.hadoop.hbase.ipc.{BlockingRpcCallback, ServerRpcController}
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.search.{ScoreDoc, TopDocs}
 import org.apache.lucene.util.PriorityQueue
@@ -33,28 +34,8 @@ class RoarClient(conf:Configuration) {
     * @return search collection
     */
   def search(tableName:String, q: String,sortOpt:Option[String]=None,offset: Int=0, size: Int=30):SearchResponse ={
-    doInTable(tableName) { table =>
-      val searchRequestBuilder = SearchRequest.newBuilder()
-      searchRequestBuilder.setTableName(tableName)
-      searchRequestBuilder.setQ(q)
-      sortOpt.foreach(searchRequestBuilder.setSort)
-      searchRequestBuilder.setTopN(offset + size)
-
-      val searchRequest = searchRequestBuilder.build()
-
+    internalSearch((table,searchRequest)=>{
       val list = new CopyOnWriteArrayList[SearchResponse]()
-
-      val response = SearchResponse.getDefaultInstance
-      table.batchCoprocessorService(IndexSearchService.getDescriptor.findMethodByName("query"),
-        searchRequest,null,null,response,new Callback[SearchResponse]() {
-          override def update(region: Array[Byte], row: Array[Byte], result: SearchResponse): Unit = {
-            if(result != null)
-              list.add(result)
-          }
-        })
-
-      logger.info("list size:{}",list.size())
-      /*
       table.coprocessorService(classOf[IndexSearchService], null, null,
         new Call[IndexSearchService, SearchResponse]() {
           override def call(instance: IndexSearchService): SearchResponse = {
@@ -69,11 +50,40 @@ class RoarClient(conf:Configuration) {
           }
         }, new Callback[SearchResponse] {
           override def update(region: Array[Byte], row: Array[Byte], result: SearchResponse): Unit = {
-            list = result :: list
+            if(result != null)
+              list.add(result)
           }
         })
-        */
-      internalMerge(offset, size, list.toArray(new Array[SearchResponse](list.size())))
+      list.toArray(new Array[SearchResponse](list.size()))
+    },tableName,q,sortOpt,offset,size)
+  }
+  def searchOnRS(tableName:String, q: String,sortOpt:Option[String]=None,offset: Int=0, size: Int=30):SearchResponse ={
+    internalSearch((table,searchRequest)=>{
+      val list = new CopyOnWriteArrayList[SearchResponse]()
+      val response = SearchResponse.getDefaultInstance
+      table.batchCoprocessorService(IndexSearchService.getDescriptor.findMethodByName("query"),
+        searchRequest,null,null,response,new Callback[SearchResponse]() {
+          override def update(region: Array[Byte], row: Array[Byte], result: SearchResponse): Unit = {
+            if(result != null)
+              list.add(result)
+          }
+        })
+      list.toArray(new Array[SearchResponse](list.size()))
+    },tableName,q,sortOpt,offset,size)
+  }
+  private def internalSearch(fun:(HTableInterface,SearchRequest)=>Array[SearchResponse],tableName:String, q: String,sortOpt:Option[String]=None,offset: Int=0, size: Int=30):SearchResponse ={
+    doInTable(tableName) { table =>
+      val searchRequestBuilder = SearchRequest.newBuilder()
+      searchRequestBuilder.setTableName(tableName)
+      searchRequestBuilder.setQ(q)
+      sortOpt.foreach(searchRequestBuilder.setSort)
+      searchRequestBuilder.setTopN(offset + size)
+
+      val searchRequest = searchRequestBuilder.build()
+      val result = fun(table,searchRequest)
+
+      logger.info("list size:{}",result.length)
+      internalMerge(offset, size, result)
     }
   }
 
