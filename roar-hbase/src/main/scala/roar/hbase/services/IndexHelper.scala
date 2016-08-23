@@ -4,12 +4,15 @@ import java.io.File
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hbase.HRegionInfo
-import org.apache.hadoop.hbase.util.FSUtils
+import org.apache.hadoop.hbase.{CellUtil, HRegionInfo}
+import org.apache.hadoop.hbase.client.{Increment, Get}
+import org.apache.hadoop.hbase.regionserver.HRegion
+import org.apache.hadoop.hbase.util.{Bytes, FSUtils}
 import org.apache.lucene.index.Term
 import org.apache.lucene.store.{Directory, FSDirectory}
-import org.apache.lucene.util.BytesRef
+import org.apache.lucene.util.{BytesRefBuilder, BytesRef}
 import org.apache.solr.store.hdfs.HdfsDirectory
+import roar.api.meta.ObjectCategory
 import roar.hbase.RoarHbaseConstants
 
 /**
@@ -46,5 +49,39 @@ object IndexHelper {
       FSDirectory.open(new File(indexPath.toUri).toPath)
     else
       new HdfsDirectory(indexPath, HdfsLockFactoryInHbase, conf)
+  }
+  /**
+    * find object id sequence number by ObjectId
+    *
+    * @return sequence number
+    */
+  private[hbase] def findObjectIdSeq(region:HRegion,objectId:Array[Byte],category:ObjectCategory): Int ={
+    import RoarHbaseConstants._
+    val brb = new BytesRefBuilder()
+    brb.append(region.getStartKey,0,region.getStartKey.length)
+    val categoryBytes = Bytes.toBytes(category.ordinal())
+    brb.append(categoryBytes,0,categoryBytes.length)
+    brb.append(objectId,0,objectId.length)
+
+    val get = new Get(brb.toBytesRef.bytes)
+    val result = region.get(get)
+
+
+    if(result != null && !result.isEmpty){//found seq
+      val seqCell = result.getColumnCells(SEQ_FAMILY,SEQ_QUALIFIER).get(0)
+      val seqBytes = CellUtil.cloneValue(seqCell)
+      Bytes.toInt(seqBytes)
+    }else{ //seq not found,so increment
+    //TODO HOW TO LOCK CURRENT Process
+    val categorySeqRowKey = new BytesRefBuilder
+      categorySeqRowKey.append(region.getStartKey,0,region.getStartKey.length)
+      categorySeqRowKey.append(categoryBytes,0,categoryBytes.length)
+      val inc = new Increment(categorySeqRowKey.toBytesRef.bytes)
+      inc.addColumn(SEQ_FAMILY,SEQ_INC_QUALIFIER,1)
+      val result = region.increment(inc)
+      val seqCell = result.getColumnCells(SEQ_FAMILY,SEQ_INC_QUALIFIER).get(0)
+      val seqBytes = CellUtil.cloneValue(seqCell)
+      Bytes.toLong(seqBytes).toInt
+    }
   }
 }

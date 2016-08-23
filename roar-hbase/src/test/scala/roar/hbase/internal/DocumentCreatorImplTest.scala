@@ -92,8 +92,8 @@ class DocumentCreatorImplTest {
 
     searcher = new RegionSearchSupport with QueryParserSupport with RegionIndexSupport with RegionCoprocessorEnvironmentSupport with LoggerSupport with Closeable{
       val env = Mockito.mock(classOf[RegionCoprocessorEnvironment])
-      val region = Mockito.mock(classOf[HRegion])
-      Mockito.when(env.getRegion).thenReturn(region)
+      val currentRegion = Mockito.mock(classOf[HRegion])
+      Mockito.when(env.getRegion).thenReturn(currentRegion)
       val tableDesc = Mockito.mock(classOf[HTableDescriptor])
       Mockito.when(region.getTableDesc).thenReturn(tableDesc)
       Mockito.when(tableDesc.getTableName).thenReturn(TableName.valueOf("trace"))

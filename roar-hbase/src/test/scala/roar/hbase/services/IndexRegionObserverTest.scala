@@ -8,7 +8,8 @@ import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
 import org.apache.hadoop.hbase.regionserver.{HRegion, RegionCoprocessorHost}
 import org.apache.hadoop.hbase.util.{ByteStringer, Bytes}
 import org.junit.{After, Assert, Before, Test}
-import roar.api.meta.ResourceDefinition
+import roar.api.meta.{ObjectCategory, ResourceDefinition}
+import roar.hbase.RoarHbaseConstants
 import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
 import stark.utils.services.XmlLoader
 
@@ -38,6 +39,10 @@ class IndexRegionObserverTest {
     val tableDesc = new HTableDescriptor(tableName)
     val colFamilyDesc = new HColumnDescriptor(family)
     tableDesc.addFamily(colFamilyDesc)
+
+    val seqFamilyDesc = new HColumnDescriptor(RoarHbaseConstants.SEQ_FAMILY)
+    tableDesc.addFamily(seqFamilyDesc)
+
     tableDesc.addCoprocessor(classOf[IndexRegionObserver].getName)
     val regionInfo = new HRegionInfo(tableName, null, null, false);
     val regionPath = new Path("target/xx")
@@ -62,6 +67,15 @@ class IndexRegionObserverTest {
       .setRequest(request.build().toByteString).build
 
     region.execService(null,call).asInstanceOf[SearchResponse]
+  }
+  @Test
+  def test_findObjectId: Unit ={
+    var seq = IndexHelper.findObjectIdSeq(region,Bytes.toBytes("asdf"),ObjectCategory.Mac)
+    Assert.assertEquals(1,seq)
+    seq = IndexHelper.findObjectIdSeq(region,Bytes.toBytes("asdf"),ObjectCategory.Mac)
+    Assert.assertEquals(2,seq)
+    seq = IndexHelper.findObjectIdSeq(region,Bytes.toBytes("fdsa"),ObjectCategory.Mac)
+    Assert.assertEquals(3,seq)
   }
   @Test
   def test_put: Unit ={

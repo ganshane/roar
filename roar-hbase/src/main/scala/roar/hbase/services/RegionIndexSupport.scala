@@ -4,16 +4,18 @@ import java.io.File
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase.CellUtil
-import org.apache.hadoop.hbase.client.{Delete, Get}
+import org.apache.hadoop.hbase.client.{Increment, Delete, Get}
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
+import org.apache.hadoop.hbase.regionserver.HRegion
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit
-import org.apache.hadoop.hbase.util.FSUtils
+import org.apache.hadoop.hbase.util.{Bytes, FSUtils}
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.index._
 import org.apache.lucene.store.{Directory, FSDirectory}
+import org.apache.lucene.util.BytesRefBuilder
 import org.apache.solr.core.DirectoryFactory
 import org.apache.solr.core.DirectoryFactory.DirContext
-import roar.api.meta.ResourceDefinition
+import roar.api.meta.{ObjectCategory, ResourceDefinition}
 import roar.hbase.RoarHbaseConstants
 import stark.utils.services.LoggerSupport
 
@@ -91,10 +93,13 @@ trait RegionIndexSupport {
       val result = coprocessorEnv.getRegion.get(get)
       val rowTerm = IndexHelper.createSIdTerm(result.getRow)
       debug("[{}] index row term {}",rd.name,rowTerm)
+      val objectId = result.getColumnLatestCell(Bytes.toBytes("info"),Bytes.toBytes("object_id"))
       val docOpt = RegionServerData.documentSource.newDocument(rd,timestamp,result)
       docOpt.foreach(indexWriter.updateDocument(rowTerm, _))
     }
   }
+
+
   protected def indexWalEdit(logEdit: WALEdit) {
     val cells = logEdit.getCells
     val it = cells.iterator()
@@ -215,4 +220,5 @@ trait RegionIndexSupport {
 trait RegionCoprocessorEnvironmentSupport{
   @inline
   def coprocessorEnv:RegionCoprocessorEnvironment
+  def region:HRegion = coprocessorEnv.getRegion
 }

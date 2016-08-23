@@ -1,9 +1,11 @@
 package roar.hbase
 
+import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.analysis.cjk.CJKAnalyzer
 
 /**
   * define some constants
+ *
   * @author <a href="mailto:jcai@ganshane.com">Jun Tsai</a>
   * @since 2016-07-03
   */
@@ -30,4 +32,9 @@ object RoarHbaseConstants {
   //支持的资源定义
   final val TRACE_RESOURCE="trace" //轨迹
   final val BEHAVIOUR_RESOURCE="behaviour" //行为
+
+  //对象序列相关定义
+  final val SEQ_FAMILY = Bytes.toBytes("_seq")
+  final val SEQ_QUALIFIER = Bytes.toBytes("seq")
+  final val SEQ_INC_QUALIFIER = Bytes.toBytes("inc")
 }
