@@ -1,16 +1,17 @@
 package roar.hbase.internal
 
-import java.io.Closeable
+import java.io.{File, Closeable}
 import java.util
 
-import org.apache.hadoop.hbase.client.Result
+import org.apache.commons.io.FileUtils
+import org.apache.hadoop.hbase.client.{Get, Result}
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.regionserver.HRegion
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase._
 import org.apache.lucene.index.IndexWriter
 import org.junit.{After, Assert, Before, Test}
-import org.mockito.Mockito
+import org.mockito.{Matchers, Mockito}
 import roar.api.meta.ResourceDefinition
 import roar.hbase.services._
 import stark.utils.services.{LoggerSupport, XmlLoader}
@@ -27,7 +28,9 @@ class DocumentCreatorImplTest {
   def test_trace: Unit ={
     val result = Mockito.mock(classOf[Result])
     Mockito.when(result.getRow).thenReturn("first".getBytes())
-    searcher.index(1L,result)
+    val region = searcher.coprocessorEnv.getRegion
+    Mockito.when(region.get(Matchers.any(classOf[Get]))).thenReturn(result)
+    searcher.index(1L,result.getRow)
     Assert.assertEquals(0,searcher.numDoc)
 
     createCell(result,"object_id",123)
@@ -35,7 +38,7 @@ class DocumentCreatorImplTest {
     createCell(result,"end_time",1237)
     createCell(result,"trace_type","test")
 
-    searcher.index(1L,result)
+    searcher.index(1L,result.getRow)
     searcher.maybeRefresh()
     Assert.assertEquals(1,searcher.numDoc)
 
@@ -101,6 +104,7 @@ class DocumentCreatorImplTest {
 
       val conf = HBaseConfiguration.create()
       Mockito.when(env.getConfiguration).thenReturn(conf)
+      conf.set(HConstants.HBASE_DIR,"target/hbase-test")
 
       @inline
       override def coprocessorEnv: RegionCoprocessorEnvironment = env
@@ -115,5 +119,6 @@ class DocumentCreatorImplTest {
   def teardown: Unit ={
     searcher.closeSearcher()
     searcher.closeIndex()
+    FileUtils.deleteQuietly(new File("target/hbase-test"))
   }
 }

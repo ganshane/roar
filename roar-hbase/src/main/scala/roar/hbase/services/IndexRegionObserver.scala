@@ -1,12 +1,12 @@
 package roar.hbase.services
 
-import org.apache.hadoop.hbase.client.{Delete, Durability, Get, Put}
+import org.apache.hadoop.hbase.client.{Delete, Durability, Put}
 import org.apache.hadoop.hbase.coprocessor.{BaseRegionObserver, CoprocessorException, ObserverContext, RegionCoprocessorEnvironment}
 import org.apache.hadoop.hbase.regionserver.HRegion.Operation
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest
 import org.apache.hadoop.hbase.regionserver.wal.{HLogKey, WALEdit}
 import org.apache.hadoop.hbase.regionserver.{Store, StoreFile}
-import org.apache.hadoop.hbase.{CellUtil, CoprocessorEnvironment, HRegionInfo}
+import org.apache.hadoop.hbase.{CoprocessorEnvironment, HRegionInfo}
 import roar.hbase.internal.RegionSearchSupport
 import stark.utils.services.LoggerSupport
 
@@ -55,20 +55,7 @@ class IndexRegionObserver extends BaseRegionObserver
   }
 
   override def postPut(e: ObserverContext[RegionCoprocessorEnvironment], put: Put, edit: WALEdit, durability: Durability): Unit = {
-    /**
-      * 因为两次put针对不同的column,在put中并未包含全部的信息,
-      * 如果仅仅使用put来进行索引,可能会导致丢失数据.
-      * 这里使用一个Get从本Region区域找到全部数据进行索引
-      */
-    val get = new Get(put.getRow)
-    /*
-    if(put.getTimeStamp != HConstants.LATEST_TIMESTAMP){
-      get.setTimeStamp(put.getTimeStamp)
-    }
-    */
-    val result = _env.getRegion.get(get)
-
-    index(put.getTimeStamp,result)
+    index(put.getTimeStamp,put.getRow)
     maybeRefresh()
   }
 
@@ -80,16 +67,7 @@ class IndexRegionObserver extends BaseRegionObserver
 
 
   override def postWALRestore(env: ObserverContext[RegionCoprocessorEnvironment], info: HRegionInfo, logKey: HLogKey, logEdit: WALEdit): Unit = {
-//  override def postWALRestore(env: ObserverContext[_ <: RegionCoprocessorEnvironment], info: HRegionInfo, logKey: WALKey, logEdit: WALEdit): Unit = {
-    val cells = logEdit.getCells
-    val it = cells.iterator()
-    while(it.hasNext){
-      val cell = it.next()
-      val get = new Get(CellUtil.cloneRow(cell))
-
-      val result = _env.getRegion.get(get)
-      index(cell.getTimestamp,result)
-    }
+    indexWalEdit(logEdit)
     maybeRefresh()
   }
 

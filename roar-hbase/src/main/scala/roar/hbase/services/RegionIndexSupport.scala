@@ -3,8 +3,10 @@ package roar.hbase.services
 import java.io.File
 
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hbase.client.{Delete, Get, Result}
+import org.apache.hadoop.hbase.CellUtil
+import org.apache.hadoop.hbase.client.{Delete, Get}
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
+import org.apache.hadoop.hbase.regionserver.wal.WALEdit
 import org.apache.hadoop.hbase.util.FSUtils
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.index._
@@ -73,12 +75,32 @@ trait RegionIndexSupport {
         info("{} index not supported",tableName.getNameAsString)
     }
   }
-  def index(timestamp:Long,result:Result): Unit = {
+  private[hbase] def index(timestamp:Long,row:Array[Byte]): Unit = {
     indexWriterOpt foreach {indexWriter=>
+      /**
+        * 因为两次put针对不同的column,在put中并未包含全部的信息,
+        * 如果仅仅使用put来进行索引,可能会导致丢失数据.
+        * 这里使用一个Get从本Region区域找到全部数据进行索引
+        */
+      val get = new Get(row)
+      /*
+      if(put.getTimeStamp != HConstants.LATEST_TIMESTAMP){
+        get.setTimeStamp(put.getTimeStamp)
+      }
+      */
+      val result = coprocessorEnv.getRegion.get(get)
       val rowTerm = IndexHelper.createSIdTerm(result.getRow)
       debug("[{}] index row term {}",rd.name,rowTerm)
       val docOpt = RegionServerData.documentSource.newDocument(rd,timestamp,result)
       docOpt.foreach(indexWriter.updateDocument(rowTerm, _))
+    }
+  }
+  protected def indexWalEdit(logEdit: WALEdit) {
+    val cells = logEdit.getCells
+    val it = cells.iterator()
+    while (it.hasNext) {
+      val cell = it.next()
+      index(cell.getTimestamp, CellUtil.cloneRow(cell))
     }
   }
   def prepareFlushIndex(): Unit ={
