@@ -5,8 +5,9 @@ package roar.api.meta.types
 import org.apache.hadoop.hbase.Cell
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.document.Field.Store
-import org.apache.lucene.document.{Field, StringField}
-import roar.api.meta.{AnalyzerCreator, DataColumnType}
+import org.apache.lucene.document.{Field, SortedSetDocValuesField, StringField}
+import org.apache.lucene.util.BytesRef
+import roar.api.meta.DataColumnType
 import roar.api.meta.ResourceDefinition.ResourceProperty
 
 /**
@@ -29,15 +30,13 @@ class KeyColumnType extends DataColumnType[String]{
         value
   }
   override def createIndexField(value: String,cd:ResourceProperty):(Field,Option[Field]) = {
-    (new StringField(cd.name, value, Store.NO),None)
+    (new StringField(cd.name, value, Store.NO),
+      if(cd.sort) Some(new SortedSetDocValuesField(cd.name,new BytesRef(Bytes.toBytes(value))))
+      else None
+    )
   }
   def setIndexValue(f:(Field,Option[Field]),value:String,cd:ResourceProperty){
-    //TODO 此处频繁创建analyzer,
-    if(cd.analyzer != null) {
-      val analyzer = AnalyzerCreator.create(cd.analyzer)
-      f._1.asInstanceOf[Field].setTokenStream(analyzer.tokenStream(cd.name,value))
-    }else {
-      f._1.asInstanceOf[Field].setStringValue(value)
-    }
+    f._1.asInstanceOf[Field].setStringValue(value)
+    f._2.foreach(_.setBytesValue(Bytes.toBytes(value))) //setStringValue(value))
   }
 }

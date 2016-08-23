@@ -1,18 +1,20 @@
 package roar.hbase.internal
 
-import java.io.{File, Closeable}
+import java.io.{Closeable, File}
 import java.util
 
 import org.apache.commons.io.FileUtils
+import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client.{Get, Result}
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.regionserver.HRegion
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.hadoop.hbase._
 import org.apache.lucene.index.IndexWriter
+import org.apache.lucene.search.{Sort, SortedSetSortField}
 import org.junit.{After, Assert, Before, Test}
 import org.mockito.{Matchers, Mockito}
 import roar.api.meta.ResourceDefinition
+import roar.api.services.RoarSparseFixedBitSet
 import roar.hbase.services._
 import stark.utils.services.{LoggerSupport, XmlLoader}
 
@@ -33,21 +35,52 @@ class DocumentCreatorImplTest {
     searcher.index(1L,result.getRow)
     Assert.assertEquals(0,searcher.numDoc)
 
-    createCell(result,"object_id",123)
+    createCell(result,"object_id","123")
     createCell(result,"start_time",1234)
     createCell(result,"end_time",1237)
     createCell(result,"trace_type","test")
 
     searcher.index(1L,result.getRow)
+
+    Mockito.when(result.getRow).thenReturn("2".getBytes())
+    createCell(result,"object_id","321")
+    searcher.index(1L,result.getRow)
+
     searcher.maybeRefresh()
-    Assert.assertEquals(1,searcher.numDoc)
+    searcher.prepareFlushIndex()
+    searcher.waitForFlushIndexThreadFinished()
+
+    Mockito.when(result.getRow).thenReturn("3".getBytes())
+    createCell(result,"object_id","321")
+    searcher.index(1L,result.getRow)
+    searcher.maybeRefresh()
+
+
+
+    Assert.assertEquals(3,searcher.numDoc)
 
 
 
     searcher.doInSearcher{s=>
       val q = "object_id:123"
       val query = searcher.parseQuery(q)
-      Assert.assertEquals(1,s.search(query,10).totalHits)
+      val sort = new Sort();
+      sort.setSort(new SortedSetSortField("object_id", false))
+      val topDocs = s.search(query,10,sort)
+      Assert.assertEquals(1,topDocs.totalHits)
+    }
+
+    var idResultOpt = searcher.searchObjectId("123")
+    idResultOpt.foreach{idResult=>
+      val idBitSet = RoarSparseFixedBitSet.deserialize(idResult.getData.newInput())
+      Assert.assertEquals(1,idBitSet.cardinality())
+      Assert.assertTrue(idBitSet.get(0))
+    }
+    idResultOpt = searcher.searchObjectId("321")
+    idResultOpt.foreach{idResult=>
+      val idBitSet = RoarSparseFixedBitSet.deserialize(idResult.getData.newInput())
+      Assert.assertEquals(1,idBitSet.cardinality())
+      Assert.assertTrue(idBitSet.get(1))
     }
   }
 
@@ -109,7 +142,7 @@ class DocumentCreatorImplTest {
       @inline
       override def coprocessorEnv: RegionCoprocessorEnvironment = env
 
-      def close() = getSearcherManager.close()
+      def close() = getSearcherManager.foreach(_.close)
     }
 
     searcher.openIndexWriter()

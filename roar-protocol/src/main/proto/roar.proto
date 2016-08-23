@@ -20,7 +20,17 @@ message SearchResponse {
  required float max_score = 3;
  repeated Row row = 4;
 }
+message IdSearchRequest {
+  optional string table_name = 1;
+  optional string q = 2;
+}
+
+message IdSearchResponse{
+  optional bytes data = 1;
+  optional int64 region_id = 2;
+}
+
 service IndexSearchService{
- rpc query(SearchRequest)
- returns(SearchResponse);
+ rpc query(SearchRequest) returns(SearchResponse);
+ rpc idQuery(IdSearchRequest) returns(IdSearchResponse);
 }

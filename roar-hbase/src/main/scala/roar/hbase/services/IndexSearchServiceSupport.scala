@@ -6,7 +6,7 @@ import com.google.protobuf.{RpcCallback, RpcController, Service}
 import org.apache.hadoop.hbase.coprocessor.CoprocessorService
 import org.apache.hadoop.hbase.protobuf.ResponseConverter
 import roar.hbase.internal.RegionSearchSupport
-import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
+import roar.protocol.generated.RoarProtos._
 import stark.utils.services.LoggerSupport
 
 /**
@@ -45,6 +45,8 @@ trait IndexSearchServiceSupport extends CoprocessorService {
       }
 
     }
+
+    override def idQuery(controller: RpcController, request: IdSearchRequest, done: RpcCallback[IdSearchResponse]): Unit = ???
   }
   override def getService: Service = service
 }

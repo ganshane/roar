@@ -18,27 +18,28 @@ trait SearcherManagerSupport {
   private val semaphore = new Semaphore(5)
 
   //全局搜索对象
-  protected def getSearcherManager: SearcherManager
+  protected def getSearcherManager: Option[SearcherManager]
 
-  private[roar] def doInSearcher[T](fun: InternalIndexSearcher => T): T = {
-    val sm = getSearcherManager
-    if (semaphore.tryAcquire(60, TimeUnit.SECONDS)) {
-      try {
-        val s = sm.acquire().asInstanceOf[InternalIndexSearcher]
+  private[roar] def doInSearcher[T](fun: InternalIndexSearcher => T): Option[T] = {
+    getSearcherManager map { sm =>
+      if (semaphore.tryAcquire(60, TimeUnit.SECONDS)) {
         try {
-          fun(s)
+          val s = sm.acquire().asInstanceOf[InternalIndexSearcher]
+          try {
+            fun(s)
+          } finally {
+            sm.release(s)
+          }
+        } catch {
+          case e: AlreadyClosedException =>
+            throw new StarkException("Server正在关闭", RoarHbaseExceptionCode.SEARCHER_CLOSING)
         } finally {
-          sm.release(s)
+          semaphore.release()
         }
-      } catch {
-        case e: AlreadyClosedException =>
-          throw new StarkException("Server正在关闭", RoarHbaseExceptionCode.SEARCHER_CLOSING)
-      } finally {
-        semaphore.release()
+      } else {
+        throw new StarkException("high load,timeout to acquire searcher",
+          RoarHbaseExceptionCode.HIGH_CONCURRENT)
       }
-    } else {
-      throw new StarkException("high load,timeout to acquire searcher",
-        RoarHbaseExceptionCode.HIGH_CONCURRENT)
     }
   }
 }
