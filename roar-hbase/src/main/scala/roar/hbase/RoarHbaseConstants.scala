@@ -37,4 +37,5 @@ object RoarHbaseConstants {
   final val SEQ_FAMILY = Bytes.toBytes("_seq")
   final val SEQ_QUALIFIER = Bytes.toBytes("seq")
   final val SEQ_INC_QUALIFIER = Bytes.toBytes("inc")
+  final val SEQ_OID_QUALIFIER = Bytes.toBytes("oid")
 }

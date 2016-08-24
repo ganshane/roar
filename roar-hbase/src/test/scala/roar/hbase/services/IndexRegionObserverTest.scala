@@ -73,9 +73,9 @@ class IndexRegionObserverTest {
     var seq = IndexHelper.findObjectIdSeq(region,Bytes.toBytes("asdf"),ObjectCategory.Mac)
     Assert.assertEquals(1,seq)
     seq = IndexHelper.findObjectIdSeq(region,Bytes.toBytes("asdf"),ObjectCategory.Mac)
-    Assert.assertEquals(2,seq)
+    Assert.assertEquals(1,seq)
     seq = IndexHelper.findObjectIdSeq(region,Bytes.toBytes("fdsa"),ObjectCategory.Mac)
-    Assert.assertEquals(3,seq)
+    Assert.assertEquals(2,seq)
   }
   @Test
   def test_put: Unit ={
