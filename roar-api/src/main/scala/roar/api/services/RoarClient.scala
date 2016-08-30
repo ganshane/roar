@@ -22,7 +22,7 @@ import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, Se
 class RoarClient(conf:Configuration) {
   private val logger = LoggerFactory getLogger getClass
   //share one connection
-  private val connection = HConnectionManager.createConnection(conf)
+  private lazy val connection = HConnectionManager.createConnection(conf)
   /**
     * call full text search to hbase cluster
     *

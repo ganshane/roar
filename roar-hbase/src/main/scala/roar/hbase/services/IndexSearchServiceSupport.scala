@@ -18,6 +18,7 @@ import stark.utils.services.LoggerSupport
 trait IndexSearchServiceSupport extends CoprocessorService {
   this:RegionSearchSupport with LoggerSupport =>
   private val emptyResponse = SearchResponse.newBuilder().setCount(0).setTotal(0).setMaxScore(0).build
+  private val emptyIdResponse = IdSearchResponse.getDefaultInstance
 
   private val service = new IndexSearchService {
     override def query(controller: RpcController, request: SearchRequest, done: RpcCallback[SearchResponse]): Unit = {
@@ -46,7 +47,28 @@ trait IndexSearchServiceSupport extends CoprocessorService {
 
     }
 
-    override def idQuery(controller: RpcController, request: IdSearchRequest, done: RpcCallback[IdSearchResponse]): Unit = ???
+    override def idQuery(controller: RpcController, request: IdSearchRequest, done: RpcCallback[IdSearchResponse]): Unit ={
+      var finalResponse = emptyIdResponse
+      try {
+        val responseOpt = searchObjectId(request.getQ,request.getObjectIdField)
+        responseOpt match {
+          case Some(response) =>
+            finalResponse = response
+          case None =>
+            controller.setFailed("response not found,resource not supported?")
+        }
+      }catch {
+        case ioe:IOException =>
+          error("fail to execute query",ioe)
+          ResponseConverter.setControllerException(controller,ioe)
+        case other:Throwable=>
+          error("fail to execute query",other)
+          controller.setFailed(other.toString)
+      }finally{
+        done.run(finalResponse)
+      }
+
+    }
   }
   override def getService: Service = service
 }

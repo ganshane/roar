@@ -5,7 +5,7 @@ option java_generic_services = true;
 option optimize_for = SPEED;
  
 message SearchRequest {
-  optional string table_name = 1;
+  optional string table_name = 1; //目前没用
   optional string q = 2;
   optional string sort = 3;
   optional int32 topN = 4 [default = 30];
@@ -21,8 +21,8 @@ message SearchResponse {
  repeated Row row = 4;
 }
 message IdSearchRequest {
-  optional string table_name = 1;
-  optional string q = 2;
+  required string object_id_field = 2;
+  optional string q = 3;
 }
 
 message IdSearchResponse{

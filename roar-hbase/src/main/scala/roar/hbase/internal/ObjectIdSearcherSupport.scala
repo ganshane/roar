@@ -8,9 +8,10 @@ import com.google.protobuf.ByteString
 import org.apache.lucene.index.{LeafReaderContext, NumericDocValues}
 import org.apache.lucene.search.SimpleCollector
 import roar.api.services.RoarSparseFixedBitSet
-import roar.hbase.services.RegionCoprocessorEnvironmentSupport
+import roar.hbase.services.{IndexHelper, RegionCoprocessorEnvironmentSupport}
 import roar.protocol.generated.RoarProtos.IdSearchResponse
 import stark.utils.services.LoggerSupport
+import scala.collection.JavaConversions._
 
 /**
   * 对象搜索的
@@ -28,14 +29,23 @@ trait ObjectIdSearcherSupport {
    * @param q 搜索条件
    * @return
    */
-  def searchObjectId(q: String,field:String,maxSeq:Int): Option[IdSearchResponse]= {
+  def searchObjectId(q: String,field:String,maxSeq:Int=0): Option[IdSearchResponse]= {
     doInSearcher { search =>
+
+      var idMaxSeq = maxSeq
+      if(maxSeq ==0) {
+        val columnOpt = queryResource.properties.find(_.name == field)
+        val column = columnOpt.getOrElse(throw new RuntimeException("column definition not found by " + field))
+        if(column.objectCategory == null)
+          throw new RuntimeException("object category is null for "+field)
+        idMaxSeq = IndexHelper.findCurrentSeq(region, column.objectCategory)
+      }
 
       val parser = createParser()
       val query = parser.parse(q)
       logger.info("object id query :{} ....", q)
       val start = System.currentTimeMillis()
-      val originCollector = new IdSearchCollector(search,field,maxSeq)
+      val originCollector = new IdSearchCollector(search,field,idMaxSeq)
       try {
         /*
         var collector:Collector = new TimeOutCollector(originCollector)

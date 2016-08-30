@@ -28,23 +28,23 @@ import scala.util.control.NonFatal
   * @author jcai
  */
 trait QueryParserSupport {
-  private lazy val analyzerObj = AnalyzerCreator.create(rd.search.analyzer)
+  private lazy val analyzerObj = AnalyzerCreator.create(queryResource.search.analyzer)
   private val logger = LoggerFactory getLogger getClass
   private val boostProperties = new java.util.HashMap[String, java.lang.Float]()
   private var defaultSearchFields = Array[String]()
   private var analyzer: PerFieldAnalyzerWrapper = _
   private var numericProperties = Map[String, ResourceProperty]()
-  private var rd: ResourceDefinition = _
+  private[hbase] var queryResource: ResourceDefinition = _
 
   def initQueryParser(rd: ResourceDefinition) {
-    this.rd = rd
+    this.queryResource = rd
     initParserParameters()
   }
 
   private def initParserParameters() {
     val keyword = new KeywordAnalyzer()
     val fieldAnalyzers = new util.HashMap[String, Analyzer]()
-    rd.properties.foreach(col => {
+    queryResource.properties.foreach(col => {
       defaultSearchFields = defaultSearchFields :+ col.name
       if (col.isKeyword) {
         //针对keyword

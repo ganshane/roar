@@ -32,10 +32,10 @@ trait RegionSearchSupport
   private[hbase] def openSearcherManager(): Unit = {
     searcherManagerOpt = indexWriterOpt.map(new SearcherManager(_,new SearcherFactory(){
 
-      initQueryParser(rd)
+      initQueryParser(queryResource)
 
       override def newSearcher(reader: IndexReader, previousReader: IndexReader): IndexSearcher = {
-        new InternalIndexSearcher(reader,rd,null)
+        new InternalIndexSearcher(reader,queryResource,null)
       }
     }))
   }
@@ -46,14 +46,14 @@ trait RegionSearchSupport
   }
   def search(q:String,sortStringOpt: Option[String]=None, topN: Int=30): Option[SearchResponse] ={
     doInSearcher { searcher =>
-      logger.info("[{}] \"{}\" sort:\"{}\" searching .... ", Array[AnyRef](rd.name, q, sortStringOpt))
+      logger.info("[{}] \"{}\" sort:\"{}\" searching .... ", Array[AnyRef](queryResource.name, q, sortStringOpt))
       val query = parseQuery(q)
       //sort
       var sortOpt: Option[Sort] = None
 
       sortStringOpt match {
         case Some(sortStr) =>
-          val it = rd.properties.iterator()
+          val it = queryResource.properties.iterator()
           sortOpt = sortStr.trim.split("\\s+").toList match {
             case field :: "asc" :: Nil =>
               createSortField(field, false, it)
@@ -83,7 +83,7 @@ trait RegionSearchSupport
       //val topDocs = searcher.search(query, filter, topN,sort)
       val endTime = System.currentTimeMillis()
       logger.info("[{}] q:{},time:{}ms,hits:{}",
-        Array[Object](rd.name, q,
+        Array[Object](queryResource.name, q,
           (endTime - startTime).asInstanceOf[Object],
           topDocs.totalHits.asInstanceOf[Object]))
       val responseBuilder = SearchResponse.newBuilder()
