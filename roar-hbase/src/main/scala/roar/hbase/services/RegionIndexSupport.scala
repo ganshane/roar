@@ -66,11 +66,16 @@ trait RegionIndexSupport {
          //new HdfsDirectory(indexPath, HdfsLockFactoryInHbase, coprocessorEnv.getConfiguration)
 
         val config = new IndexWriterConfig(RoarHbaseConstants.defaultAnalyzer)
-        val mergePolicy = new LogByteSizeMergePolicy()
+        config.setRAMBufferSizeMB(128)
+//        config.setMaxBufferedDocs(10000)
+
+        val mergePolicy = new TieredMergePolicy//new LogByteSizeMergePolicy()
+//        mergePolicy.setMaxMergeAtOnce(10)
+//        mergePolicy.setSegmentsPerTier(10)
         // compound files cannot be used with HDFS
         //    mergePolicy.setUseCompoundFile(false)
         config.setMergePolicy(mergePolicy)
-        config.setMergeScheduler(new SerialMergeScheduler())
+//        config.setMergeScheduler(new SerialMergeScheduler())
         indexWriterOpt = Some(new IndexWriter(directory, config))
       case None=>
         info("{} index not supported",tableName.getNameAsString)
