@@ -4,7 +4,8 @@ package roar.hbase.services
 
 import org.apache.hadoop.hbase.client.Result
 import org.apache.lucene.document.Document
-import roar.api.meta.ResourceDefinition
+import roar.api.meta.{ObjectCategory, ResourceDefinition}
+import roar.hbase.services.DocumentSource.ObjectIdSeqFinder
 
 /**
  * 文档创建
@@ -12,8 +13,12 @@ import roar.api.meta.ResourceDefinition
   * @author jcai
  */
 trait DocumentCreator{
-  def newDocument(rd:ResourceDefinition,result:Result): Document
+  def newDocument(rd:ResourceDefinition,result:Result,objectIdSeqFinder: ObjectIdSeqFinder): Document
+}
+object DocumentSource{
+  type ObjectIdSeqFinder = (Array[Byte], ObjectCategory) => Int
 }
 trait DocumentSource{
-  def newDocument(rd:ResourceDefinition,timestamp:Long,result:Result): Option[Document]
+  def newDocument(rd:ResourceDefinition,timestamp:Long,result:Result,objectIdSeqFinder: ObjectIdSeqFinder): Option[Document]
 }
+

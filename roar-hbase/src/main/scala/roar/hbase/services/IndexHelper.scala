@@ -17,6 +17,7 @@ import org.apache.lucene.util.{BytesRefBuilder, BytesRef}
 import org.apache.solr.store.hdfs.HdfsDirectory
 import roar.api.meta.ObjectCategory
 import roar.hbase.RoarHbaseConstants
+import roar.hbase.RoarHbaseConstants._
 
 /**
   * index helper class
@@ -82,7 +83,21 @@ object IndexHelper {
     *
     * @return sequence number
     */
-  private[hbase] def findObjectIdSeq(region:HRegion,objectId:Array[Byte],category:ObjectCategory): Int ={
+  private[hbase] def findCurrentSeq(region:HRegion,category:ObjectCategory): Int ={
+
+    val regionStartKey = getRegionStartKey(region)
+    val categoryBytes = Bytes.toBytes(category.ordinal())
+    val categorySeqRowKey = new BytesRefBuilder
+    categorySeqRowKey.append(regionStartKey, 0, regionStartKey.length)
+    categorySeqRowKey.append(categoryBytes, 0, categoryBytes.length)
+    val get = new Get(categorySeqRowKey.toBytesRef.bytes)
+    get.addColumn(SEQ_FAMILY,SEQ_INC_QUALIFIER)
+    val result = region.get(get)
+    val seqCell = result.getColumnCells(SEQ_FAMILY, SEQ_INC_QUALIFIER).get(0)
+    val seqBytes = CellUtil.cloneValue(seqCell)
+    Bytes.toLong(seqBytes).toInt
+  }
+  private[hbase] def findObjectIdSeq(region:HRegion)(objectId:Array[Byte],category:ObjectCategory): Int ={
     import RoarHbaseConstants._
 
 
@@ -138,6 +153,7 @@ object IndexHelper {
           //此处不适用batchMutation,因为此处的数据不进行索引,避免多余coprocessor开销
           region.batchReplay(Array(replay1,replay2))
 
+          println("create new seq :",seq,Bytes.toString(objectId))
           seq
 
         }

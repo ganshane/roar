@@ -16,6 +16,7 @@ import org.apache.solr.core.DirectoryFactory
 import org.apache.solr.core.DirectoryFactory.DirContext
 import roar.api.meta.ResourceDefinition
 import roar.hbase.RoarHbaseConstants
+import roar.hbase.services.DocumentSource.ObjectIdSeqFinder
 import stark.utils.services.LoggerSupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -81,7 +82,7 @@ trait RegionIndexSupport {
         info("{} index not supported",tableName.getNameAsString)
     }
   }
-  private[hbase] def index(timestamp:Long,row:Array[Byte]): Unit = {
+  private[hbase] def index(timestamp:Long,row:Array[Byte],finder:ObjectIdSeqFinder=IndexHelper.findObjectIdSeq(region)): Unit = {
     indexWriterOpt foreach {indexWriter=>
       /**
         * 因为两次put针对不同的column,在put中并未包含全部的信息,
@@ -97,7 +98,7 @@ trait RegionIndexSupport {
       val result = coprocessorEnv.getRegion.get(get)
       val rowTerm = IndexHelper.createSIdTerm(result.getRow)
       debug("[{}] index row term {}",rd.name,rowTerm)
-      val docOpt = RegionServerData.documentSource.newDocument(rd,timestamp,result)
+      val docOpt = RegionServerData.documentSource.newDocument(rd,timestamp,result,finder)
       docOpt.foreach(indexWriter.updateDocument(rowTerm, _))
     }
   }
@@ -133,7 +134,7 @@ trait RegionIndexSupport {
       */
       val result = coprocessorEnv.getRegion.get(get)
 
-      val docOpt = RegionServerData.documentSource.newDocument(rd,delete.getTimeStamp,result)
+      val docOpt = RegionServerData.documentSource.newDocument(rd,delete.getTimeStamp,result,IndexHelper.findObjectIdSeq(region))
       docOpt match{
         case Some(doc) =>
           indexWriter.updateDocument(rowTerm,doc)

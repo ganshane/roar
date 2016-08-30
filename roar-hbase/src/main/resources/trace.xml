@@ -29,7 +29,7 @@
   </sync>
   <properties>
     <!--定义数据同步各字段属性 name:字段名 list_name:列表显示名称 index_type:索引类型 default_query:是否默认查询字段(分字段查询) dic:字典规范词类别 primary_key:是否主键(唯一) modify_key:是否增量字段(用于同步数据识别增量) format:日期格式化格式-->
-    <property family="info" name="object_id" cn_name="对象ID" column_type="Int" sort="true"/>
+    <property family="info" name="object_id" cn_name="对象ID" column_type="Key" object_category="Person" />
     <property family="info" name="start_time" cn_name="开始时间" column_type="Int" sort="true"/>
     <property family="info" name="end_time" cn_name="结束时间" column_type="Int"/>
     <property family="info" name="trace_type" cn_name="轨迹类型" column_type="Key"/>

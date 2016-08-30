@@ -2,9 +2,10 @@
 // site: http://www.ganshane.com
 package roar.api.meta
 
+import org.apache.hadoop.hbase.CellUtil
 import org.apache.hadoop.hbase.client.{Put, Result}
-import org.apache.lucene.document.Field
 import org.apache.lucene.document.Field.Index
+import org.apache.lucene.document.{Field, NumericDocValuesField}
 import roar.api.meta.ResourceDefinition.{ResourceProperty, ResourceTraitProperty}
 import roar.api.meta.types._
 
@@ -81,6 +82,9 @@ trait ResourceDefinitionConversions {
         IntColumnType
       case ColumnType.Long =>
         LongColumnType
+      case other=>
+        throw new RuntimeException("column type not supported "+other)
+
     }
   }
   trait ResourcePropertyWrapper{
@@ -92,11 +96,26 @@ trait ResourceDefinitionConversions {
     def isNumeric: Boolean
     def readDfsValue(dbObj: Put):Option[Any]
     def readDfsValue(dbObj: Result):Option[Any]
+    def readDfsValueAsByteArray(dbObj: Result):Option[Array[Byte]]
     def readApiValue(dbObj: Result):Option[String]
+    def createObjectIdField():Field
   }
   implicit def resourcePropertyOps(rp: ResourceProperty):ResourcePropertyWrapper = new ResourcePropertyWrapper{
     def createIndexField(value: Any): (Field,Option[Field]) = {
       rp.columnType.getColumnType.asInstanceOf[DataColumnType[Any]].createIndexField(value, rp)
+    }
+
+
+    override def readDfsValueAsByteArray(dbObj: Result): Option[Array[Byte]] = {
+      val cell = dbObj.getColumnLatestCell(rp.family.getBytes,rp.name.getBytes)
+      if(cell == null)
+        None
+      else
+        Some(CellUtil.cloneValue(cell))
+    }
+
+    override def createObjectIdField(): Field = {
+      new NumericDocValuesField(rp.name,1)
     }
 
     def setIndexValue(f: (Field,Option[Field]), value: Any) {

@@ -70,12 +70,17 @@ class IndexRegionObserverTest {
   }
   @Test
   def test_findObjectId: Unit ={
-    var seq = IndexHelper.findObjectIdSeq(region,Bytes.toBytes("asdf"),ObjectCategory.Mac)
+    var seq = IndexHelper.findObjectIdSeq(region)(Bytes.toBytes("asdf"),ObjectCategory.Mac)
     Assert.assertEquals(1,seq)
-    seq = IndexHelper.findObjectIdSeq(region,Bytes.toBytes("asdf"),ObjectCategory.Mac)
+    Assert.assertEquals(1,IndexHelper.findCurrentSeq(region,ObjectCategory.Mac))
+
+    seq = IndexHelper.findObjectIdSeq(region)(Bytes.toBytes("asdf"),ObjectCategory.Mac)
     Assert.assertEquals(1,seq)
-    seq = IndexHelper.findObjectIdSeq(region,Bytes.toBytes("fdsa"),ObjectCategory.Mac)
+    Assert.assertEquals(1,IndexHelper.findCurrentSeq(region,ObjectCategory.Mac))
+
+    seq = IndexHelper.findObjectIdSeq(region)(Bytes.toBytes("fdsa"),ObjectCategory.Mac)
     Assert.assertEquals(2,seq)
+    Assert.assertEquals(2,IndexHelper.findCurrentSeq(region,ObjectCategory.Mac))
   }
   @Test
   def test_put: Unit ={

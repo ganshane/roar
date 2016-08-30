@@ -10,7 +10,7 @@ import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.regionserver.HRegion
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.index.IndexWriter
-import org.apache.lucene.search.{Sort, SortedSetSortField}
+import org.apache.lucene.search.{Sort, SortField}
 import org.junit.{After, Assert, Before, Test}
 import org.mockito.{Matchers, Mockito}
 import roar.api.meta.ResourceDefinition
@@ -40,11 +40,12 @@ class DocumentCreatorImplTest {
     createCell(result,"end_time",1237)
     createCell(result,"trace_type","test")
 
-    searcher.index(1L,result.getRow)
+
+    searcher.index(1L,result.getRow,(bb,cate)=>1)
 
     Mockito.when(result.getRow).thenReturn("2".getBytes())
     createCell(result,"object_id","321")
-    searcher.index(1L,result.getRow)
+    searcher.index(1L,result.getRow,(bb,cate)=>2)
 
     searcher.maybeRefresh()
     searcher.prepareFlushIndex()
@@ -52,7 +53,7 @@ class DocumentCreatorImplTest {
 
     Mockito.when(result.getRow).thenReturn("3".getBytes())
     createCell(result,"object_id","321")
-    searcher.index(1L,result.getRow)
+    searcher.index(1L,result.getRow,(bb,cate)=>2)
     searcher.maybeRefresh()
 
 
@@ -65,22 +66,22 @@ class DocumentCreatorImplTest {
       val q = "object_id:123"
       val query = searcher.parseQuery(q)
       val sort = new Sort();
-      sort.setSort(new SortedSetSortField("object_id", false))
+      sort.setSort(new SortField("object_id", SortField.Type.INT))
       val topDocs = s.search(query,10,sort)
       Assert.assertEquals(1,topDocs.totalHits)
     }
 
-    var idResultOpt = searcher.searchObjectId("123")
-    idResultOpt.foreach{idResult=>
-      val idBitSet = RoarSparseFixedBitSet.deserialize(idResult.getData.newInput())
-      Assert.assertEquals(1,idBitSet.cardinality())
-      Assert.assertTrue(idBitSet.get(0))
-    }
-    idResultOpt = searcher.searchObjectId("321")
+    var idResultOpt = searcher.searchObjectId("123","object_id",3)
     idResultOpt.foreach{idResult=>
       val idBitSet = RoarSparseFixedBitSet.deserialize(idResult.getData.newInput())
       Assert.assertEquals(1,idBitSet.cardinality())
       Assert.assertTrue(idBitSet.get(1))
+    }
+    idResultOpt = searcher.searchObjectId("321","object_id",3)
+    idResultOpt.foreach{idResult=>
+      val idBitSet = RoarSparseFixedBitSet.deserialize(idResult.getData.newInput())
+      Assert.assertEquals(1,idBitSet.cardinality())
+      Assert.assertTrue(idBitSet.get(2))
     }
   }
 

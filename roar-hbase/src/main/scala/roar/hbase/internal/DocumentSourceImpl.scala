@@ -12,6 +12,7 @@ import roar.api.meta.ResourceDefinition
 import roar.api.meta.ResourceDefinition.ResourceProperty
 import roar.api.meta.ResourceDefinitionConversions._
 import roar.hbase.RoarHbaseConstants
+import roar.hbase.services.DocumentSource.ObjectIdSeqFinder
 import roar.hbase.services.{DocumentCreator, DocumentSource}
 import stark.utils.services.LoggerSupport
 
@@ -31,7 +32,7 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
   private val utField = new LongField(RoarHbaseConstants.UPDATE_TIME_FIELD_NAME, 1L, LongField.TYPE_NOT_STORED)
 
 
-  override def newDocument(rd: ResourceDefinition, timestamp:Long,result: Result): Option[Document] = {
+  override def newDocument(rd: ResourceDefinition, timestamp:Long,result: Result,objectIdSeqFinder: ObjectIdSeqFinder): Option[Document] = {
 
     //优先使用自定义的DocumentCreator
     var creator = factories.get(rd.name)
@@ -44,7 +45,7 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
         for ((col, index) <- rd.properties.view.zipWithIndex) {
           if (col.objectCategory != null) {
             if (analyticsIdSeq.isDefined) {
-              warn("[{}] duplicate analytics id decleared", rd.name)
+              warn("[{}] duplicate analytics id declaration", rd.name)
             }
             analyticsIdSeq = Some(index)
           }
@@ -55,7 +56,7 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
           creator = value
       }
     }
-    val doc = creator.newDocument(rd,result)
+    val doc = creator.newDocument(rd,result,objectIdSeqFinder)
     if(doc.getFields.nonEmpty) {
       //用来快速更新
       idField.setStringValue(Bytes.toString(result.getRow))
@@ -79,8 +80,9 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
 
 class DefaultDocumentCreator extends DocumentCreator {
   private val cachedFields = scala.collection.mutable.Map[String, (Field,Option[Field])]()
+  private val cachedSeqField = scala.collection.mutable.Map[String,Field]()
 
-  override def newDocument(rd: ResourceDefinition, result: Result): Document = {
+  override def newDocument(rd: ResourceDefinition, result: Result,objectIdSeqFinder: ObjectIdSeqFinder): Document = {
     val doc = new Document
 
     for ((col, index) <- rd.properties.view.zipWithIndex) {
@@ -94,12 +96,33 @@ class DefaultDocumentCreator extends DocumentCreator {
               doc.add(field._1)
               //添加排序
               field._2.foreach(doc.add)
+
+
+              //处理带有序列的
+              cachedSeqField.get(col.name).foreach{idField=>
+                val idSeqValue = col.readDfsValueAsByteArray(result).get
+                val seq = objectIdSeqFinder.apply(idSeqValue,col.objectCategory)
+                idField.setLongValue(seq)
+                doc.add(idField)
+              }
             case None =>
               val field = createFieldable(col, value)
               cachedFields.put(col.name, field)
               doc.add(field._1)
               //添加排序
               field._2.foreach(doc.add)
+
+              if(col.objectCategory != null) {
+                //添加ID序列字段
+                val idField = col.createObjectIdField()
+                cachedSeqField.put(col.name, idField)
+
+                val idSeqValue = col.readDfsValueAsByteArray(result).get
+                val seq = objectIdSeqFinder.apply(idSeqValue, col.objectCategory)
+                idField.setLongValue(seq)
+                doc.add(idField)
+              }
+
           }
         case _ =>
         //
