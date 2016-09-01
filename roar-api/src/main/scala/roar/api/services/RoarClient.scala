@@ -11,7 +11,7 @@ import org.apache.lucene.search.{ScoreDoc, TopDocs}
 import org.apache.lucene.util.PriorityQueue
 import org.slf4j.LoggerFactory
 import roar.protocol.generated.RoarProtos.SearchResponse.Row
-import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
+import roar.protocol.generated.RoarProtos._
 
 /**
   * roar client for hbase
@@ -83,7 +83,68 @@ class RoarClient(conf:Configuration) {
       val result = fun(table,searchRequest)
 
       logger.info("list size:{}",result.length)
-      internalMerge(offset, size, result)
+//      internalMerge(offset, size, result)
+      mergeAux(offset,size,result)
+    }
+  }
+
+  /**
+    * id search  on hbase cluster
+    *
+    * @param tableName table name
+    * @param objectIdField object id field name
+    * @param q query
+    * @return id search response
+    */
+  def idSearch(tableName:String, objectIdField:String,q: String):Array[IdSearchResponse] ={
+    internalIdSearch((table,searchRequest)=>{
+      val list = new CopyOnWriteArrayList[IdSearchResponse]()
+      table.coprocessorService(classOf[IndexSearchService], null, null,
+        new Call[IndexSearchService, IdSearchResponse]() {
+          override def call(instance: IndexSearchService): IdSearchResponse = {
+            val controller: ServerRpcController = new ServerRpcController
+            val rpcCallback = new BlockingRpcCallback[IdSearchResponse]
+            instance.idQuery(controller, searchRequest, rpcCallback)
+            val response = rpcCallback.get
+            if (controller.failedOnException) {
+              throw controller.getFailedOn
+            }
+            response
+          }
+        }, new Callback[IdSearchResponse] {
+          override def update(region: Array[Byte], row: Array[Byte], result: IdSearchResponse): Unit = {
+            if(result != null)
+              list.add(result)
+          }
+        })
+      list.toArray(new Array[IdSearchResponse](list.size()))
+    },tableName,objectIdField,q)
+  }
+  def idSearchOnRS(tableName:String, objectIdField:String,q: String):Array[IdSearchResponse]={
+    internalIdSearch((table,searchRequest)=>{
+      val list = new CopyOnWriteArrayList[IdSearchResponse]()
+      val response = IdSearchResponse.getDefaultInstance
+      table.batchCoprocessorService(IndexSearchService.getDescriptor.findMethodByName("idQuery"),
+        searchRequest,null,null,response,new Callback[IdSearchResponse]() {
+          override def update(region: Array[Byte], row: Array[Byte], result: IdSearchResponse): Unit = {
+            if(result != null)
+              list.add(result)
+          }
+        })
+      list.toArray(new Array[IdSearchResponse](list.size()))
+    },tableName,objectIdField,q)
+  }
+  private def internalIdSearch(fun:(HTableInterface,IdSearchRequest)=>Array[IdSearchResponse],tableName:String,objectIdField:String,q: String):Array[IdSearchResponse] ={
+    doInTable(tableName) { table =>
+      val searchRequestBuilder = IdSearchRequest.newBuilder()
+      searchRequestBuilder.setQ(q)
+      searchRequestBuilder.setObjectIdField(objectIdField)
+
+      val searchRequest = searchRequestBuilder.build()
+      val result = fun(table,searchRequest)
+      logger.info("id list size:{}",result.length)
+
+      result
     }
   }
 
@@ -167,7 +228,7 @@ class RoarClient(conf:Configuration) {
       return "ShardRef(shardIndex=" + shardIndex + " hitIndex=" + hitIndex + ")"
     }
   }
-  private class ScoreMergeSortQueue(shardHits:List[SearchResponse]) extends PriorityQueue[ShardRef](shardHits.length) {
+  private class ScoreMergeSortQueue(shardHits:Array[SearchResponse]) extends PriorityQueue[ShardRef](shardHits.length) {
 
     def lessThan(first: ShardRef, second: ShardRef): Boolean = {
       assert(first ne second)
@@ -194,7 +255,7 @@ class RoarClient(conf:Configuration) {
     }
   }
 
-  private[services] def mergeAux(start: Int, size: Int, shardHits: List[SearchResponse]):SearchResponse={
+  private[services] def mergeAux(start: Int, size: Int, shardHits: Array[SearchResponse]):SearchResponse={
     val queue: PriorityQueue[ShardRef] = new ScoreMergeSortQueue(shardHits)
     var totalHitCount: Int = 0
     var totalRecordNum:Int = 0

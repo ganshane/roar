@@ -40,7 +40,7 @@ class RoarClientTest {
     }
 
     val list =List(response1.build(),response2.build())
-    val response = client.mergeAux(0,10,list)
+    val response = client.mergeAux(0,10,list.toArray)
 
     Assert.assertEquals(1000+900,response.getCount)
     Assert.assertEquals(response2.getMaxScore,response.getMaxScore,0)
