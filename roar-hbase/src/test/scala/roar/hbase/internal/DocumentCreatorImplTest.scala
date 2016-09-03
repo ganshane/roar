@@ -128,6 +128,7 @@ class DocumentCreatorImplTest {
       val env = Mockito.mock(classOf[RegionCoprocessorEnvironment])
       val currentRegion = Mockito.mock(classOf[HRegion])
       Mockito.when(env.getRegion).thenReturn(currentRegion)
+      Mockito.when(currentRegion.getRegionNameAsString).thenReturn("trace-region")
       val tableDesc = Mockito.mock(classOf[HTableDescriptor])
       Mockito.when(region.getTableDesc).thenReturn(tableDesc)
       Mockito.when(tableDesc.getTableName).thenReturn(TableName.valueOf("trace"))
