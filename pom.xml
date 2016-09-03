@@ -8,7 +8,7 @@
   <groupId>com.ganshane.roar</groupId>
   <artifactId>roar-project_2.11</artifactId>
   <packaging>pom</packaging>
-  <version>dev-SNAPSHOT</version>
+  <version>1.0.4</version>
   <name>Roar Project</name>
   <description>Big Data Framework</description>
   <modules>
