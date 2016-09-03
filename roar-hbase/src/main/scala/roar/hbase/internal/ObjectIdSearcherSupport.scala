@@ -66,7 +66,7 @@ trait ObjectIdSearcherSupport {
       val out = ByteString.newOutput(originCollector.result.ramBytesUsed().toInt)
       originCollector.result.serialize(out)
       idShardResult.setData(out.toByteString)
-      idShardResult.setRegionId(region.getRegionId)
+      idShardResult.setRegionId(region.getRegionNameAsString)
 
       idShardResult.build()
     }

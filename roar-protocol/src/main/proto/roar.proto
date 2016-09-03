@@ -27,7 +27,7 @@ message IdSearchRequest {
 
 message IdSearchResponse{
   optional bytes data = 1;
-  optional int64 region_id = 2;
+  optional string region_id = 2;
 }
 
 service IndexSearchService{
