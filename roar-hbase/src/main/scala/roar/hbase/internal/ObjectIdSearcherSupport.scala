@@ -5,6 +5,7 @@ package roar.hbase.internal
 import javax.naming.SizeLimitExceededException
 
 import com.google.protobuf.ByteString
+import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.index.{LeafReaderContext, NumericDocValues}
 import org.apache.lucene.search.SimpleCollector
 import roar.api.services.RoarSparseFixedBitSet
@@ -66,7 +67,7 @@ trait ObjectIdSearcherSupport {
       val out = ByteString.newOutput(originCollector.result.ramBytesUsed().toInt)
       originCollector.result.serialize(out)
       idShardResult.setData(out.toByteString)
-      idShardResult.setRegionId(region.getRegionNameAsString)
+      idShardResult.setRegionId(Bytes.toString(region.getStartKey))//.getRegionNameAsString)
 
       idShardResult.build()
     }
@@ -85,7 +86,12 @@ trait ObjectIdSearcherSupport {
       val idSeq = readObjectId(doc)
 //      logger.debug("doc:{} idseq:{}",doc,idSeq)
       if (idSeq < 0) return
-      result.set(idSeq)
+      try {
+        result.set(idSeq)
+      }catch{
+        case aio:ArrayIndexOutOfBoundsException=>
+          error("maxSeq:{} idSeq:{}",maxSeq,idSeq)
+      }
     }
 
     private def readObjectId(doc: Int): Int = {

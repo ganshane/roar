@@ -93,7 +93,7 @@ object IndexHelper {
     val get = new Get(categorySeqRowKey.toBytesRef.bytes)
     get.addColumn(SEQ_FAMILY,SEQ_INC_QUALIFIER)
     val result = region.get(get)
-    val seqCell = result.getColumnCells(SEQ_FAMILY, SEQ_INC_QUALIFIER).get(0)
+    val seqCell = result.getColumnLatestCell(SEQ_FAMILY, SEQ_INC_QUALIFIER)
     val seqBytes = CellUtil.cloneValue(seqCell)
     Bytes.toLong(seqBytes).toInt
   }
@@ -113,7 +113,7 @@ object IndexHelper {
     var incResult = region.get(get)
 
     if(incResult != null && !incResult.isEmpty){//found seq
-      val seqCell = incResult.getColumnCells(SEQ_FAMILY,SEQ_QUALIFIER).get(0)
+      val seqCell = incResult.getColumnLatestCell(SEQ_FAMILY,SEQ_QUALIFIER)
       val seqBytes = CellUtil.cloneValue(seqCell)
       Bytes.toInt(seqBytes)
     }else{ //seq not found,so increment
@@ -123,7 +123,7 @@ object IndexHelper {
         incResult = region.get(get)
         if(incResult != null && !incResult.isEmpty) {
           //found seq
-          val seqCell = incResult.getColumnCells(SEQ_FAMILY, SEQ_QUALIFIER).get(0)
+          val seqCell = incResult.getColumnLatestCell(SEQ_FAMILY, SEQ_QUALIFIER)
           val seqBytes = CellUtil.cloneValue(seqCell)
           Bytes.toLong(seqBytes).toInt
         }else {
@@ -134,7 +134,7 @@ object IndexHelper {
           val inc = new Increment(categorySeqRowKey.toBytesRef.bytes)
           inc.addColumn(SEQ_FAMILY, SEQ_INC_QUALIFIER, 1)
           val result = region.increment(inc)
-          val seqCell = result.getColumnCells(SEQ_FAMILY, SEQ_INC_QUALIFIER).get(0)
+          val seqCell = result.getColumnLatestCell(SEQ_FAMILY, SEQ_INC_QUALIFIER)
           val seqBytes = CellUtil.cloneValue(seqCell)
           val seq = Bytes.toLong(seqBytes).toInt
 
@@ -153,7 +153,7 @@ object IndexHelper {
           //此处不适用batchMutation,因为此处的数据不进行索引,避免多余coprocessor开销
           region.batchReplay(Array(replay1,replay2))
 
-          println("create new seq :",seq,Bytes.toString(objectId))
+//          println("create new seq :",seq,Bytes.toString(objectId))
           seq
 
         }

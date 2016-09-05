@@ -6,6 +6,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.client.coprocessor.Batch.{Call, Callback}
 import org.apache.hadoop.hbase.ipc.{BlockingRpcCallback, ServerRpcController}
+import org.apache.hadoop.hbase.protobuf.ResponseConverter
 import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.search.{ScoreDoc, TopDocs}
 import org.apache.lucene.util.PriorityQueue
@@ -106,8 +107,10 @@ class RoarClient(conf:Configuration) {
             val rpcCallback = new BlockingRpcCallback[IdSearchResponse]
             instance.idQuery(controller, searchRequest, rpcCallback)
             val response = rpcCallback.get
-            if (controller.failedOnException) {
-              throw controller.getFailedOn
+            val ioe = ResponseConverter.getControllerException(controller)
+            if (ioe != null) {
+              logger.error("exception on rpc:",ioe)
+              throw ioe
             }
             response
           }
@@ -127,7 +130,7 @@ class RoarClient(conf:Configuration) {
       table.batchCoprocessorService(IndexSearchService.getDescriptor.findMethodByName("idQuery"),
         searchRequest,null,null,response,new Callback[IdSearchResponse]() {
           override def update(region: Array[Byte], row: Array[Byte], result: IdSearchResponse): Unit = {
-            if(result != null)
+            if(result != null && result.hasRegionId)
               list.add(result)
           }
         })
