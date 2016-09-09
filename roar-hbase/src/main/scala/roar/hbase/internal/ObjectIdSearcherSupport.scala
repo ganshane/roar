@@ -2,16 +2,18 @@
 // site: http://www.ganshane.com
 package roar.hbase.internal
 
+import java.io.DataOutputStream
 import javax.naming.SizeLimitExceededException
 
 import com.google.protobuf.ByteString
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.index.{LeafReaderContext, NumericDocValues}
 import org.apache.lucene.search.SimpleCollector
-import roar.api.services.RoarSparseFixedBitSet
+import org.roaringbitmap.RoaringBitmap
 import roar.hbase.services.{IndexHelper, RegionCoprocessorEnvironmentSupport}
 import roar.protocol.generated.RoarProtos.IdSearchResponse
 import stark.utils.services.LoggerSupport
+
 import scala.collection.JavaConversions._
 
 /**
@@ -60,12 +62,19 @@ trait ObjectIdSearcherSupport {
       }
       //originCollector.result.optimize()
       val time = System.currentTimeMillis() - start
-      val resultSize = originCollector.result.cardinality()
+      val resultSize = originCollector.result.getCardinality()
+//      val resultSize = originCollector.result.cardinality()
       logger.info("object id query :{},size:{} time:" + time, q, resultSize)
 
       val idShardResult = IdSearchResponse.newBuilder()
-      val out = ByteString.newOutput(originCollector.result.ramBytesUsed().toInt)
-      originCollector.result.serialize(out)
+      originCollector.result.runOptimize //reduce bytes
+
+//      val out = ByteString.newOutput(originCollector.result.ramBytesUsed().toInt)
+      val out = ByteString.newOutput(originCollector.result.serializedSizeInBytes())
+      val dos = new DataOutputStream(out);
+      originCollector.result.serialize(dos)
+//      originCollector.result.serialize(out)
+
       idShardResult.setData(out.toByteString)
       idShardResult.setRegionId(Bytes.toString(region.getStartKey))//.getRegionNameAsString)
 
@@ -74,7 +83,9 @@ trait ObjectIdSearcherSupport {
   }
 
   private class IdSearchCollector(s: InternalIndexSearcher,field:String,maxSeq:Int) extends SimpleCollector {
-    private[internal] val result = new RoarSparseFixedBitSet(maxSeq)
+//    private[internal] val result = new RoarSparseFixedBitSet(maxSeq)
+    private[internal] val result = new RoaringBitmap()
+
     private var idFieldValues:NumericDocValues = _
 
     override def doSetNextReader(context: LeafReaderContext): Unit = {
@@ -87,7 +98,8 @@ trait ObjectIdSearcherSupport {
 //      logger.debug("doc:{} idseq:{}",doc,idSeq)
       if (idSeq < 0) return
       try {
-        result.set(idSeq)
+//        result.set(idSeq)
+        result.add(idSeq)
       }catch{
         case aio:ArrayIndexOutOfBoundsException=>
           error("maxSeq:{} idSeq:{}",maxSeq,idSeq)
