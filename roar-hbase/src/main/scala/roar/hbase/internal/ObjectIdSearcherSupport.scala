@@ -10,6 +10,7 @@ import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.index.{LeafReaderContext, NumericDocValues}
 import org.apache.lucene.search.SimpleCollector
 import org.roaringbitmap.RoaringBitmap
+import roar.api.services.RowKeyHelper
 import roar.hbase.services.{IndexHelper, RegionCoprocessorEnvironmentSupport}
 import roar.protocol.generated.RoarProtos.IdSearchResponse
 import stark.utils.services.LoggerSupport
@@ -76,7 +77,7 @@ trait ObjectIdSearcherSupport {
 //      originCollector.result.serialize(out)
 
       idShardResult.setData(out.toByteString)
-      idShardResult.setRegionId(Bytes.toString(region.getStartKey))//.getRegionNameAsString)
+      idShardResult.setRegionId(Bytes.toString(RowKeyHelper.getRegionStartKey(region.getStartKey)))//.getRegionNameAsString)
 
       idShardResult.build()
     }

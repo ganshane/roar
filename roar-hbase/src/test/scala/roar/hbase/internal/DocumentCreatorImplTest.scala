@@ -1,6 +1,6 @@
 package roar.hbase.internal
 
-import java.io.{Closeable, File}
+import java.io.{Closeable, DataInputStream, File}
 import java.util
 
 import org.apache.commons.io.FileUtils
@@ -13,8 +13,8 @@ import org.apache.lucene.index.IndexWriter
 import org.apache.lucene.search.{Sort, SortField}
 import org.junit.{After, Assert, Before, Test}
 import org.mockito.{Matchers, Mockito}
+import org.roaringbitmap.RoaringBitmap
 import roar.api.meta.ResourceDefinition
-import roar.api.services.RoarSparseFixedBitSet
 import roar.hbase.services._
 import stark.utils.services.{LoggerSupport, XmlLoader}
 
@@ -73,15 +73,19 @@ class DocumentCreatorImplTest {
 
     var idResultOpt = searcher.searchObjectId("123","object_id",3)
     idResultOpt.foreach{idResult=>
-      val idBitSet = RoarSparseFixedBitSet.deserialize(idResult.getData.newInput())
-      Assert.assertEquals(1,idBitSet.cardinality())
-      Assert.assertTrue(idBitSet.get(1))
+      val idBitSet = new RoaringBitmap()
+
+      idBitSet.deserialize(new DataInputStream(idResult.getData.newInput()))
+      Assert.assertEquals(1,idBitSet.getCardinality())
+      Assert.assertTrue(idBitSet.contains(1))
     }
     idResultOpt = searcher.searchObjectId("321","object_id",3)
     idResultOpt.foreach{idResult=>
-      val idBitSet = RoarSparseFixedBitSet.deserialize(idResult.getData.newInput())
-      Assert.assertEquals(1,idBitSet.cardinality())
-      Assert.assertTrue(idBitSet.get(2))
+      val idBitSet = new RoaringBitmap()
+
+      idBitSet.deserialize(new DataInputStream(idResult.getData.newInput()))
+      Assert.assertEquals(1,idBitSet.getCardinality())
+      Assert.assertTrue(idBitSet.contains(2))
     }
   }
 
