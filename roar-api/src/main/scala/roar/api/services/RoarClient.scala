@@ -3,6 +3,7 @@ package roar.api.services
 import java.util.concurrent.CopyOnWriteArrayList
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hbase.CellUtil
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.client.coprocessor.Batch.{Call, Callback}
 import org.apache.hadoop.hbase.ipc.{BlockingRpcCallback, ServerRpcController}
@@ -11,6 +12,8 @@ import org.apache.hadoop.io.IOUtils
 import org.apache.lucene.search.{ScoreDoc, TopDocs}
 import org.apache.lucene.util.PriorityQueue
 import org.slf4j.LoggerFactory
+import roar.api.meta.ObjectCategory
+import roar.api.RoarApiConstants._
 import roar.protocol.generated.RoarProtos.SearchResponse.Row
 import roar.protocol.generated.RoarProtos._
 
@@ -163,6 +166,24 @@ class RoarClient(conf:Configuration) {
       val get = new Get(rowId)
       val result = table.get(get)
       if(result.isEmpty) None else Some(result)
+    }
+  }
+
+  /**
+    * 查询某一序列对应的号码
+    * @param tableName 表名
+    * @param regionStartKey region起始的key
+    * @param category 类别
+    * @param idSeq id的序列
+    * @return
+    */
+  def findObjectId(tableName:String, regionStartKey:Array[Byte], category:ObjectCategory, idSeq:Int):Array[Byte]={
+    doInTable(tableName){table=>
+      val rowId = RowKeyHelper.buildIdSeqRowKey(regionStartKey,category,idSeq)
+      val get = new Get(rowId)
+      val result = table.get(get)
+      val cell = result.getColumnLatestCell(SEQ_FAMILY,SEQ_OID_QUALIFIER)
+      CellUtil.cloneValue(cell)
     }
   }
 

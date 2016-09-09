@@ -16,8 +16,10 @@ import org.apache.lucene.store.{Directory, FSDirectory}
 import org.apache.lucene.util.{BytesRefBuilder, BytesRef}
 import org.apache.solr.store.hdfs.HdfsDirectory
 import roar.api.meta.ObjectCategory
+import roar.api.services.RowKeyHelper
 import roar.hbase.RoarHbaseConstants
 import roar.hbase.RoarHbaseConstants._
+import roar.api.RoarApiConstants._
 
 /**
   * index helper class
@@ -61,22 +63,10 @@ object IndexHelper {
     * @return id
     */
   def buildIdSeqRowKey(region:HRegion,category: ObjectCategory,idSeq:Int):Array[Byte]={
-    val idCardSeqKey = new BytesRefBuilder()
-    val regionStartKey = getRegionStartKey(region)
-
-    idCardSeqKey.append(regionStartKey,0,regionStartKey.length)
-    val categoryBytes = Bytes.toBytes(category.ordinal())
-    idCardSeqKey.append(categoryBytes,0,categoryBytes.length)
-    val seqBytes = Bytes.toBytes(idSeq)
-    idCardSeqKey.append(seqBytes,0,seqBytes.length)
-
-    idCardSeqKey.bytes
+    RowKeyHelper.buildIdSeqRowKey(region.getStartKey,category,idSeq)
   }
   private def getRegionStartKey(region:HRegion): Array[Byte] = {
-    var regionStartKey = region.getStartKey
-    if (regionStartKey == null || regionStartKey.isEmpty)
-      regionStartKey = Bytes.toBytes("00000000") //default start Key
-    regionStartKey
+    RowKeyHelper.getRegionStartKey(region.getStartKey)
   }
   /**
     * find object id sequence number by ObjectId

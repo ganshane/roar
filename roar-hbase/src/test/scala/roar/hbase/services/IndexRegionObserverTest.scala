@@ -3,13 +3,15 @@ package roar.hbase.services
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase._
-import org.apache.hadoop.hbase.client.{Delete, Put}
+import org.apache.hadoop.hbase.client.{Get, Delete, Put}
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos
 import org.apache.hadoop.hbase.regionserver.{HRegion, RegionCoprocessorHost}
 import org.apache.hadoop.hbase.util.{ByteStringer, Bytes}
 import org.junit.{After, Assert, Before, Test}
+import roar.api.RoarApiConstants
+import roar.api.RoarApiConstants._
 import roar.api.meta.{ObjectCategory, ResourceDefinition}
-import roar.hbase.RoarHbaseConstants
+import roar.api.services.RowKeyHelper
 import roar.protocol.generated.RoarProtos.{IndexSearchService, SearchRequest, SearchResponse}
 import stark.utils.services.XmlLoader
 
@@ -40,7 +42,7 @@ class IndexRegionObserverTest {
     val colFamilyDesc = new HColumnDescriptor(family)
     tableDesc.addFamily(colFamilyDesc)
 
-    val seqFamilyDesc = new HColumnDescriptor(RoarHbaseConstants.SEQ_FAMILY)
+    val seqFamilyDesc = new HColumnDescriptor(RoarApiConstants.SEQ_FAMILY)
     tableDesc.addFamily(seqFamilyDesc)
 
     tableDesc.addCoprocessor(classOf[IndexRegionObserver].getName)
@@ -81,6 +83,13 @@ class IndexRegionObserverTest {
     seq = IndexHelper.findObjectIdSeq(region)(Bytes.toBytes("fdsa"),ObjectCategory.Mac)
     Assert.assertEquals(2,seq)
     Assert.assertEquals(2,IndexHelper.findCurrentSeq(region,ObjectCategory.Mac))
+
+    val rowId = RowKeyHelper.buildIdSeqRowKey(region.getStartKey,ObjectCategory.Mac,2)
+    val get = new Get(rowId)
+    val result = region.get(get)
+    val cell = result.getColumnLatestCell(SEQ_FAMILY,SEQ_OID_QUALIFIER)
+    val values = CellUtil.cloneValue(cell)
+    Assert.assertEquals("fdsa",Bytes.toString(values))
   }
   @Test
   def test_put: Unit ={

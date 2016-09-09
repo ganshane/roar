@@ -34,8 +34,6 @@ object RoarHbaseConstants {
   final val BEHAVIOUR_RESOURCE="behaviour" //行为
 
   //对象序列相关定义
-  final val SEQ_FAMILY = Bytes.toBytes("_seq")
-  final val SEQ_QUALIFIER = Bytes.toBytes("seq")
   final val SEQ_INC_QUALIFIER = Bytes.toBytes("inc")
-  final val SEQ_OID_QUALIFIER = Bytes.toBytes("oid")
+  final val SEQ_QUALIFIER = Bytes.toBytes("seq")
 }
