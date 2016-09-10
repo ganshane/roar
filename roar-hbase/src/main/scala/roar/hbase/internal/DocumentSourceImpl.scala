@@ -25,9 +25,9 @@ import scala.collection.JavaConversions._
  */
 class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) extends DocumentSource with LoggerSupport {
   //sid field
-  private val sidField = new BinaryDocValuesField(RoarHbaseConstants.OBJECT_ID_PAYLOAD_FIELD, new BytesRef)
+  private val sidField = new BinaryDocValuesField(RoarHbaseConstants.ROW_ID_FIELD_NAME, new BytesRef)
   private val cacheCreator = new ConcurrentHashMap[String, DocumentCreator]()
-  private val idField = new StringField(RoarHbaseConstants.OBJECT_ID_FIELD_NAME,"", Field.Store.NO)
+  private val rowIdField = new StringField(RoarHbaseConstants.ROW_ID_FIELD_NAME,"", Field.Store.NO)
   //TODO 调整为INT类型
   private val utField = new LongField(RoarHbaseConstants.UPDATE_TIME_FIELD_NAME, 1L, LongField.TYPE_NOT_STORED)
 
@@ -59,8 +59,8 @@ class DocumentSourceImpl(factories: java.util.Map[String, DocumentCreator]) exte
     val doc = creator.newDocument(rd,result,objectIdSeqFinder)
     if(doc.getFields.nonEmpty) {
       //用来快速更新
-      idField.setStringValue(Bytes.toString(result.getRow))
-      doc.add(idField)
+      rowIdField.setStringValue(Bytes.toString(result.getRow))
+      doc.add(rowIdField)
 
       //用来获取对应的列值
       sidField.setBytesValue(result.getRow)

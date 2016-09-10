@@ -64,6 +64,7 @@ class FieldGroupCountCollector(field:String,groupNames:util.Collection[BytesRef]
     Range(0,pq.size()).map(i=>pq.pop()).toArray
   }
 }
+
 case class GroupCount(bytesRef: BytesRef){
   var count=0
 }

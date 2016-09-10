@@ -69,6 +69,8 @@ trait IndexSearchServiceSupport extends CoprocessorService {
       }
 
     }
+
+    override def freqQuery(controller: RpcController, request: GroupCountSearchRequest, done: RpcCallback[GroupCountSearchResponse]): Unit = ???
   }
   override def getService: Service = service
 }

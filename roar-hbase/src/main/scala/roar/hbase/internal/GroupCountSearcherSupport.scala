@@ -11,7 +11,7 @@ import stark.utils.services.LoggerSupport
  *
  * @author jcai
  */
-trait FreqObjectSearcherSupport {
+trait GroupCountSearcherSupport {
   this: SearcherManagerSupport
     with QueryParserSupport
     with RegionCoprocessorEnvironmentSupport

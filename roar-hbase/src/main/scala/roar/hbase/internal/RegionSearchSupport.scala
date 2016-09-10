@@ -21,7 +21,7 @@ import scala.annotation.tailrec
 trait RegionSearchSupport
   extends QueryParserSupport
     with SearcherManagerSupport
-    with FreqObjectSearcherSupport
+    with GroupCountSearcherSupport
     with ObjectIdSearcherSupport {
   this:RegionIndexSupport with RegionCoprocessorEnvironmentSupport with LoggerSupport =>
   private var searcherManagerOpt:Option[SearcherManager] = None

@@ -34,7 +34,7 @@ class InternalIndexSearcher(reader: IndexReader, rd: ResourceDefinition, executo
 
   def rowId(docId: Int): BytesRef= {
     val subReaderContext= getSubReaderContext(docId)
-    val docValues = subReaderContext.reader().getBinaryDocValues(RoarHbaseConstants.OBJECT_ID_PAYLOAD_FIELD)
+    val docValues = subReaderContext.reader().getBinaryDocValues(RoarHbaseConstants.ROW_ID_FIELD_NAME)
     docValues.get(docId-subReaderContext.docBaseInParent)
   }
 

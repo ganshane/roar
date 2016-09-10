@@ -30,7 +30,7 @@ import roar.api.RoarApiConstants._
 object IndexHelper {
   def createSIdTerm(id: Array[Byte]) = {
     val bb = new BytesRef(id)
-    new Term(RoarHbaseConstants.OBJECT_ID_FIELD_NAME, bb)
+    new Term(RoarHbaseConstants.ROW_ID_FIELD_NAME, bb)
   }
   def getDaughtersIndexTmpDir(parent: HRegionInfo, conf: Configuration):(Directory,Directory) = {
     val parentPath = getIndexPath(parent,conf)

@@ -29,8 +29,21 @@ message IdSearchResponse{
   optional bytes data = 1;
   optional string region_id = 2;
 }
+message GroupCountSearchRequest {
+  required string group_field = 1;
+  optional string q = 2;
+}
+
+message GroupCountSearchResponse{
+  message GroupCount {
+    required bytes name = 1;
+    required int32 count = 2;
+  }
+  repeated GroupCount result = 1;
+}
 
 service IndexSearchService{
  rpc query(SearchRequest) returns(SearchResponse);
  rpc idQuery(IdSearchRequest) returns(IdSearchResponse);
+ rpc freqQuery(GroupCountSearchRequest) returns(GroupCountSearchResponse);
 }

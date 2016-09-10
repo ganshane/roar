@@ -10,7 +10,6 @@ import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment
 import org.apache.hadoop.hbase.regionserver.HRegion
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.index.IndexWriter
-import org.apache.lucene.search.{Sort, SortField}
 import org.junit.{After, Assert, Before, Test}
 import org.mockito.{Matchers, Mockito}
 import org.roaringbitmap.RoaringBitmap
@@ -64,14 +63,23 @@ class DocumentCreatorImplTest {
 
     val objectIdFieldName = RoarApiConstants.OBJECT_ID_FIELD_FORMAT.format("object_id")
 
+    val q = "object_id:123"
+    val responseOpt = searcher.search(q,None,10)
+    responseOpt.foreach{response=>
+      val total = response.getTotal
+      Assert.assertEquals(3,total)
+      val count = response.getCount
+      Assert.assertEquals(1,count)
+    }
+    /*
     searcher.doInSearcher{s=>
-      val q = "object_id:123"
       val query = searcher.parseQuery(q)
       val sort = new Sort();
       sort.setSort(new SortField(objectIdFieldName, SortField.Type.INT))
       val topDocs = s.search(query,10,sort)
       Assert.assertEquals(1,topDocs.totalHits)
     }
+    */
 
     var idResultOpt = searcher.searchObjectId("123",objectIdFieldName,3)
     idResultOpt.foreach{idResult=>

@@ -16,13 +16,12 @@ object RoarHbaseConstants {
   final val RESOURCES_PATH="resources"
   final val INDEX_TRANSACTIONS_PATH="region-idx-in-split" //index transactions
 
-  /*Index Constant*/
-  final val OBJECT_ID_FIELD_NAME = "_id"
+  /* 记录了主键字段,支持查询以及快速获取 */
+  final val ROW_ID_FIELD_NAME = "_id"
   final val UPDATE_TIME_FIELD_NAME = "_ut"
-  final val OID_FILED_NAME= "_OID"
 
-  final val OBJECT_ID_PAYLOAD_FIELD = "_PL"
-  final val OBJECT_ID_PAYLOAD_VALUE = "_UID"
+//  final val OBJECT_ID_PAYLOAD_FIELD = "_PL"
+//  final val OBJECT_ID_PAYLOAD_VALUE = "_UID"
   final val DELETED_SID = java.lang.Integer.MIN_VALUE
   //进行频次搜索时候，输出结果中的次数
   final val FACET_COUNT = "_count"
