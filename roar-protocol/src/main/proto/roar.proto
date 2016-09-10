@@ -31,7 +31,8 @@ message IdSearchResponse{
 }
 message GroupCountSearchRequest {
   required string group_field = 1;
-  optional string q = 2;
+  optional int32 top_n = 2 [default = 1000];
+  optional string q = 3;
 }
 
 message GroupCountSearchResponse{

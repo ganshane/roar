@@ -153,6 +153,64 @@ class RoarClient(conf:Configuration) {
       result
     }
   }
+  def groupSearch(tableName:String,q:String,groupField:String,topN: Int):Array[GroupCountSearchResponse] ={
+    internalGroupSearch((table,searchRequest)=>{
+      val list = new CopyOnWriteArrayList[GroupCountSearchResponse]()
+      table.coprocessorService(classOf[IndexSearchService], null, null,
+        new Call[IndexSearchService, GroupCountSearchResponse]() {
+          override def call(instance: IndexSearchService): GroupCountSearchResponse = {
+            val controller: ServerRpcController = new ServerRpcController
+            val rpcCallback = new BlockingRpcCallback[GroupCountSearchResponse]
+            instance.freqQuery(controller, searchRequest, rpcCallback)
+            val response = rpcCallback.get
+            val ioe = ResponseConverter.getControllerException(controller)
+            if (ioe != null) {
+              logger.error("exception on rpc:",ioe)
+              throw ioe
+            }
+            response
+          }
+        }, new Callback[GroupCountSearchResponse] {
+          override def update(region: Array[Byte], row: Array[Byte], result: GroupCountSearchResponse): Unit = {
+            if(result != null)
+              list.add(result)
+          }
+        })
+      list.toArray(new Array[GroupCountSearchResponse](list.size()))
+    },tableName,groupField,q,topN)
+  }
+  def idSearchOnRS(tableName:String, q:String,groupField:String,topN: Int):Array[GroupCountSearchResponse]={
+    internalGroupSearch((table,searchRequest)=>{
+      val list = new CopyOnWriteArrayList[GroupCountSearchResponse]()
+      val response = GroupCountSearchResponse.getDefaultInstance
+      table.batchCoprocessorService(IndexSearchService.getDescriptor.findMethodByName("freqQuery"),
+        searchRequest,null,null,response,new Callback[GroupCountSearchResponse]() {
+          override def update(region: Array[Byte], row: Array[Byte], result: GroupCountSearchResponse): Unit = {
+            if(result != null)
+              list.add(result)
+          }
+        })
+      list.toArray(new Array[GroupCountSearchResponse](list.size()))
+    },tableName,groupField,q,topN)
+  }
+  private def internalGroupSearch(fun:(HTableInterface,GroupCountSearchRequest)=>Array[GroupCountSearchResponse],
+                                  tableName:String,
+                                  groupField:String,
+                                  q: String,
+                                  topN:Int):Array[GroupCountSearchResponse] ={
+    doInTable(tableName) { table =>
+      val searchRequestBuilder = GroupCountSearchRequest.newBuilder()
+      searchRequestBuilder.setQ(q)
+      searchRequestBuilder.setGroupField(groupField)
+      searchRequestBuilder.setTopN(topN)
+
+      val searchRequest = searchRequestBuilder.build()
+      val result = fun(table,searchRequest)
+      logger.info("group list size:{}",result.length)
+
+      result
+    }
+  }
 
   /**
     * find Row Data from hbase
