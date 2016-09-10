@@ -12,4 +12,6 @@ object RoarApiConstants {
   final val SEQ_FAMILY = Bytes.toBytes("_seq")
   final val SEQ_OID_QUALIFIER = Bytes.toBytes("oid")
 
+  final val OBJECT_ID_FIELD_FORMAT="%s_PL"
+
 }

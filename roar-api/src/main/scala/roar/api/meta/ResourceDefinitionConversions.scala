@@ -6,6 +6,7 @@ import org.apache.hadoop.hbase.CellUtil
 import org.apache.hadoop.hbase.client.{Put, Result}
 import org.apache.lucene.document.Field.Index
 import org.apache.lucene.document.{Field, NumericDocValuesField}
+import roar.api.RoarApiConstants
 import roar.api.meta.ResourceDefinition.{ResourceProperty, ResourceTraitProperty}
 import roar.api.meta.types._
 
@@ -115,7 +116,7 @@ trait ResourceDefinitionConversions {
     }
 
     override def createObjectIdField(): Field = {
-      new NumericDocValuesField(rp.name,1)
+      new NumericDocValuesField(RoarApiConstants.OBJECT_ID_FIELD_FORMAT.format(rp.name),1)
     }
 
     def setIndexValue(f: (Field,Option[Field]), value: Any) {

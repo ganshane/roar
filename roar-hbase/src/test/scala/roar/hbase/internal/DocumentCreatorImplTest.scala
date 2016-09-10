@@ -14,6 +14,7 @@ import org.apache.lucene.search.{Sort, SortField}
 import org.junit.{After, Assert, Before, Test}
 import org.mockito.{Matchers, Mockito}
 import org.roaringbitmap.RoaringBitmap
+import roar.api.RoarApiConstants
 import roar.api.meta.ResourceDefinition
 import roar.hbase.services._
 import stark.utils.services.{LoggerSupport, XmlLoader}
@@ -61,17 +62,18 @@ class DocumentCreatorImplTest {
     Assert.assertEquals(3,searcher.numDoc)
 
 
+    val objectIdFieldName = RoarApiConstants.OBJECT_ID_FIELD_FORMAT.format("object_id")
 
     searcher.doInSearcher{s=>
       val q = "object_id:123"
       val query = searcher.parseQuery(q)
       val sort = new Sort();
-      sort.setSort(new SortField("object_id", SortField.Type.INT))
+      sort.setSort(new SortField(objectIdFieldName, SortField.Type.INT))
       val topDocs = s.search(query,10,sort)
       Assert.assertEquals(1,topDocs.totalHits)
     }
 
-    var idResultOpt = searcher.searchObjectId("123","object_id",3)
+    var idResultOpt = searcher.searchObjectId("123",objectIdFieldName,3)
     idResultOpt.foreach{idResult=>
       val idBitSet = new RoaringBitmap()
 
@@ -79,13 +81,21 @@ class DocumentCreatorImplTest {
       Assert.assertEquals(1,idBitSet.getCardinality())
       Assert.assertTrue(idBitSet.contains(1))
     }
-    idResultOpt = searcher.searchObjectId("321","object_id",3)
+    idResultOpt = searcher.searchObjectId("321",objectIdFieldName,3)
     idResultOpt.foreach{idResult=>
       val idBitSet = new RoaringBitmap()
 
       idBitSet.deserialize(new DataInputStream(idResult.getData.newInput()))
       Assert.assertEquals(1,idBitSet.getCardinality())
       Assert.assertTrue(idBitSet.contains(2))
+    }
+
+    val freqResultOpt = searcher.searchFreq("321","object_id",10)
+    freqResultOpt.foreach{r=>
+      Assert.assertEquals(1,r.size)
+      val traceType = r(0).bytesRef.utf8ToString()
+      Assert.assertEquals("321",traceType)
+      Assert.assertEquals(2,r(0).count)
     }
   }
 

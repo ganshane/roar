@@ -5,7 +5,7 @@ package roar.api.meta.types
 import org.apache.hadoop.hbase.Cell
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.document.Field.Store
-import org.apache.lucene.document.{Field, SortedSetDocValuesField, StringField}
+import org.apache.lucene.document.{Field, SortedDocValuesField, StringField}
 import org.apache.lucene.util.BytesRef
 import roar.api.meta.DataColumnType
 import roar.api.meta.ResourceDefinition.ResourceProperty
@@ -31,7 +31,7 @@ class KeyColumnType extends DataColumnType[String]{
   }
   override def createIndexField(value: String,cd:ResourceProperty):(Field,Option[Field]) = {
     (new StringField(cd.name, value, Store.NO),
-      if(cd.sort) Some(new SortedSetDocValuesField(cd.name,new BytesRef(Bytes.toBytes(value))))
+      if(cd.sort) Some(new SortedDocValuesField(cd.name,new BytesRef(Bytes.toBytes(value))))
       else None
     )
   }
