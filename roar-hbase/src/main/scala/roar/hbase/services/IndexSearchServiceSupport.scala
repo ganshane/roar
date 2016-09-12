@@ -82,8 +82,9 @@ trait IndexSearchServiceSupport extends CoprocessorService {
               val rb = builder.addResultBuilder()
               rb.setName(ByteString.copyFromUtf8(g.bytesRef.utf8ToString()))
               rb.setCount(g.count)
-              rb.setTotal(numDoc)
             }
+            builder.setPartialGroup(false)
+            builder.setTotalDoc(numDoc)
             finalResponse = builder.build()
           case None =>
             controller.setFailed("response not found,resource not supported?")
