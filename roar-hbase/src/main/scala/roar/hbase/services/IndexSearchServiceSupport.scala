@@ -74,7 +74,7 @@ trait IndexSearchServiceSupport extends CoprocessorService {
     override def freqQuery(controller: RpcController, request: GroupCountSearchRequest, done: RpcCallback[GroupCountSearchResponse]): Unit = {
       var finalResponse = emptyGroupResponse
       try {
-        val responseOpt = searchFreq(request.getQ,request.getGroupField,request.getTopN())
+        val responseOpt = searchFreq(request.getQ,request.getGroupField,request.getMaxGroup,request.getTopN)
         responseOpt match {
           case Some(data) =>
             val builder = GroupCountSearchResponse.newBuilder()

@@ -21,7 +21,7 @@ trait GroupCountSearcherSupport {
    * @param q 搜索条件
    * @return
    */
-  def searchFreq(q: String,field:String,topN:Int=1000): Option[(Array[GroupCount],Boolean,Int)]= {
+  def searchFreq(q: String,field:String,maxGroup:Int=10000,topN:Int=1000): Option[(Array[GroupCount],Boolean,Int)]= {
     doInSearcher { search =>
       val parser = createParser()
       val query = parser.parse(q)
@@ -30,7 +30,7 @@ trait GroupCountSearcherSupport {
 
 
       //TODO max groups
-      val groupsCollector = new TermAllGroupsCollector(field,100000)
+      val groupsCollector = new TermAllGroupsCollector(field,maxGroup)
       search.search(query, groupsCollector)
       val groups = groupsCollector.getGroups()
       val fieldCountCollector = new FieldGroupCountCollector(field,groups)

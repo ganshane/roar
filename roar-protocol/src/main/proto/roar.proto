@@ -33,6 +33,7 @@ message GroupCountSearchRequest {
   required string group_field = 1;
   optional int32 top_n = 2 [default = 1000];
   optional string q = 3;
+  optional int32 max_group  = 4 [default = 10000]; //最大处理的group数目
 }
 
 message GroupCountSearchResponse{
