@@ -39,6 +39,7 @@ message GroupCountSearchResponse{
   message GroupCount {
     required bytes name = 1;
     required int32 count = 2;
+    required int32 total = 3;
   }
   repeated GroupCount result = 1;
 }

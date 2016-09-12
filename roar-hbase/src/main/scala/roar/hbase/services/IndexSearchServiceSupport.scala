@@ -81,6 +81,8 @@ trait IndexSearchServiceSupport extends CoprocessorService {
             data.foreach{g=>
               val rb = builder.addResultBuilder()
               rb.setName(ByteString.copyFromUtf8(g.bytesRef.utf8ToString()))
+              rb.setCount(g.count)
+              rb.setTotal(numDoc)
             }
             finalResponse = builder.build()
           case None =>

@@ -26,8 +26,8 @@ import scala.concurrent.duration.Duration
 
 /**
   * support region index
-  * create 'trace',  {NAME => 'info', COMPRESSION => 'SNAPPY'},{NAME=>'_seq'},
-  * {NUMREGIONS => 10 * 5, SPLITALGO => 'HexStringSplit',MAX_FILESIZE=>'1000000000000'}
+   create 'trace',  {NAME => 'info', COMPRESSION => 'SNAPPY'},{NAME=>'_seq'},
+   {NUMREGIONS => 10 * 5, SPLITALGO => 'HexStringSplit',MAX_FILESIZE=>'1000000000000'}
   *
   * alter 'trace', {METHOD => 'table_att', SPLIT_POLICY => 'org.apache.hadoop.hbase.regionserver.DisabledRegionSplitPolicy', MAX_FILESIZE => '100000000000'}
   *

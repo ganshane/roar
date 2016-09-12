@@ -32,7 +32,7 @@
     <property family="info" name="object_id" cn_name="对象ID" column_type="Key" object_category="Person" sort="true"/>
     <property family="info" name="start_time" cn_name="开始时间" column_type="Int" sort="true"/>
     <property family="info" name="end_time" cn_name="结束时间" column_type="Int"/>
-    <property family="info" name="trace_type" cn_name="轨迹类型" column_type="Key"/>
+    <property family="info" name="trace_type" cn_name="轨迹类型" column_type="Key" sort="true"/>
     <property family="info" name="geo" cn_name="经纬度" column_type="Text"/>
     <property family="info" name="district" cn_name="行政区划" column_type="Int"/>
   </properties>
