@@ -5,7 +5,7 @@ import java.util
 import org.apache.lucene.index.{DocValues, LeafReaderContext, SortedDocValues}
 import org.apache.lucene.search.SimpleCollector
 import org.apache.lucene.search.grouping.AbstractAllGroupsCollector
-import org.apache.lucene.util.{BytesRef, PriorityQueue, SentinelIntSet}
+import org.apache.lucene.util.{BytesRef, SentinelIntSet}
 
 /**
   *
@@ -55,6 +55,7 @@ class FieldGroupCountCollector(field:String,groupNames:util.Collection[BytesRef]
   override def needsScores(): Boolean = false
 
   def getTopGroups(topN:Int):Array[GroupCount]={
+    /*
     val pq= new PriorityQueue[GroupCount](topN){
       override def lessThan(a: GroupCount, b: GroupCount): Boolean = {
         a.count <= b.count
@@ -65,6 +66,17 @@ class FieldGroupCountCollector(field:String,groupNames:util.Collection[BytesRef]
       pq.insertWithOverflow(it.next())
 
     Range(0,pq.size()).map(i=>pq.pop()).toArray
+    */
+    val groupCountColl = new Array[GroupCount](groupMap.size)
+
+    val it = groupMap.values.iterator
+    var i = 0
+    while(it.hasNext){
+      groupCountColl(i)=it.next()
+      i+=1
+    }
+
+    groupCountColl
   }
 }
 
