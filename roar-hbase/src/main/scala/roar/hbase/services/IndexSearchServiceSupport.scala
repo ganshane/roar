@@ -78,13 +78,14 @@ trait IndexSearchServiceSupport extends CoprocessorService {
         responseOpt match {
           case Some(data) =>
             val builder = GroupCountSearchResponse.newBuilder()
-            data.foreach{g=>
+            data._1.foreach{g=>
               val rb = builder.addResultBuilder()
               rb.setName(ByteString.copyFromUtf8(g.bytesRef.utf8ToString()))
               rb.setCount(g.count)
             }
-            builder.setPartialGroup(false)
+            builder.setPartialGroup(data._2)
             builder.setTotalDoc(numDoc)
+            builder.setHitDoc(data._3)
             finalResponse = builder.build()
           case None =>
             controller.setFailed("response not found,resource not supported?")

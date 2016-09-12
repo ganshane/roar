@@ -4,6 +4,7 @@ import java.util
 
 import org.apache.lucene.index.{DocValues, LeafReaderContext, SortedDocValues}
 import org.apache.lucene.search.SimpleCollector
+import org.apache.lucene.search.grouping.AbstractAllGroupsCollector
 import org.apache.lucene.util.{BytesRef, PriorityQueue, SentinelIntSet}
 
 /**
@@ -21,6 +22,7 @@ class FieldGroupCountCollector(field:String,groupNames:util.Collection[BytesRef]
   private var index: SortedDocValues = _
 
   private var ord:Int = _
+  private[internal] var totalHits = 0
   private def initGroupCountObject():Map[BytesRef,GroupCount]={
     val it = groupNames.iterator()
     var map = Map[BytesRef,GroupCount]()
@@ -32,6 +34,7 @@ class FieldGroupCountCollector(field:String,groupNames:util.Collection[BytesRef]
     map
   }
   override def collect(doc: Int): Unit = {
+    totalHits += 1
     ord = index.getOrd(doc)
     if(ord>=0){
       val slot = orderSet.find(ord)
@@ -67,4 +70,55 @@ class FieldGroupCountCollector(field:String,groupNames:util.Collection[BytesRef]
 
 case class GroupCount(bytesRef: BytesRef){
   var count=0
+}
+
+class TermAllGroupsCollector(groupField: String, initialSize: Int=128) extends AbstractAllGroupsCollector [ BytesRef ] {
+
+  private var index: SortedDocValues = null
+  private val ordSet = new SentinelIntSet (initialSize, - 2)
+  private val groups = new util.ArrayList[BytesRef] (initialSize)
+  private[internal] var isPartial = false
+
+
+  override def collect (doc: Int) {
+    val key: Int = index.getOrd (doc)
+    if (! ordSet.exists (key) ) {
+      if(groups.size() > initialSize){
+        isPartial = true
+        return
+      }
+      ordSet.put (key)
+      var term: BytesRef = null
+      if (key == - 1) {
+        term = null
+      }
+      else {
+        term = BytesRef.deepCopyOf (index.lookupOrd (key) )
+      }
+      groups.add (term)
+    }
+  }
+
+  def getGroups: util.Collection[BytesRef] = {
+    groups
+  }
+
+  protected override def doSetNextReader (context: LeafReaderContext) {
+    index = DocValues.getSorted (context.reader, groupField)
+    ordSet.clear()
+
+    import scala.collection.JavaConversions._
+
+    for (countedGroup <- groups) {
+      if (countedGroup == null) {
+        ordSet.put (- 1)
+      }
+      else {
+        val ord: Int = index.lookupTerm (countedGroup)
+        if (ord >= 0) {
+          ordSet.put (ord)
+        }
+      }
+    }
+  }
 }

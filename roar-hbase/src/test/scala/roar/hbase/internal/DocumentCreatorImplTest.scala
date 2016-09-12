@@ -98,7 +98,8 @@ class DocumentCreatorImplTest {
     }
 
     val freqResultOpt = searcher.searchFreq("321","object_id",10)
-    freqResultOpt.foreach{r=>
+    freqResultOpt.foreach{data=>
+      val r = data._1
       Assert.assertEquals(1,r.size)
       val traceType = r(0).bytesRef.utf8ToString()
       Assert.assertEquals("321",traceType)

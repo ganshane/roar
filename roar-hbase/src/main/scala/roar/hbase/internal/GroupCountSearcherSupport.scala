@@ -2,7 +2,6 @@
 // site: http://www.ganshane.com
 package roar.hbase.internal
 
-import org.apache.lucene.search.grouping.term.TermAllGroupsCollector
 import roar.hbase.services.RegionCoprocessorEnvironmentSupport
 import stark.utils.services.LoggerSupport
 
@@ -22,7 +21,7 @@ trait GroupCountSearcherSupport {
    * @param q 搜索条件
    * @return
    */
-  def searchFreq(q: String,field:String,topN:Int=1000): Option[Array[GroupCount]]= {
+  def searchFreq(q: String,field:String,topN:Int=1000): Option[(Array[GroupCount],Boolean,Int)]= {
     doInSearcher { search =>
       val parser = createParser()
       val query = parser.parse(q)
@@ -42,7 +41,7 @@ trait GroupCountSearcherSupport {
       //      val resultSize = originCollector.result.cardinality()
       logger.info("freq query :{},size:{} time:" + time, q, result.length)
 
-      result
+      (result,groupsCollector.isPartial,fieldCountCollector.totalHits)
     }
   }
 }
