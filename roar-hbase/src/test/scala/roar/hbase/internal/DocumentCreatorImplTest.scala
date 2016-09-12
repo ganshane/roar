@@ -13,7 +13,6 @@ import org.apache.lucene.index.IndexWriter
 import org.junit.{After, Assert, Before, Test}
 import org.mockito.{Matchers, Mockito}
 import org.roaringbitmap.RoaringBitmap
-import roar.api.RoarApiConstants
 import roar.api.meta.ResourceDefinition
 import roar.hbase.services._
 import stark.utils.services.{LoggerSupport, XmlLoader}
@@ -61,7 +60,7 @@ class DocumentCreatorImplTest {
     Assert.assertEquals(3,searcher.numDoc)
 
 
-    val objectIdFieldName = RoarApiConstants.OBJECT_ID_FIELD_FORMAT.format("object_id")
+    val objectIdFieldName = "object_id"
 
     val q = "object_id:123"
     val responseOpt = searcher.search(q,None,10)
@@ -81,7 +80,7 @@ class DocumentCreatorImplTest {
     }
     */
 
-    var idResultOpt = searcher.searchObjectId("123",objectIdFieldName,3)
+    var idResultOpt = searcher.searchObjectId("123",objectIdFieldName)
     idResultOpt.foreach{idResult=>
       val idBitSet = new RoaringBitmap()
 

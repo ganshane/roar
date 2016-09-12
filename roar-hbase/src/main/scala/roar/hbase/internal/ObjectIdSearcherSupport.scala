@@ -10,12 +10,11 @@ import org.apache.hadoop.hbase.util.Bytes
 import org.apache.lucene.index.{LeafReaderContext, NumericDocValues}
 import org.apache.lucene.search.SimpleCollector
 import org.roaringbitmap.RoaringBitmap
+import roar.api.RoarApiConstants
 import roar.api.services.RowKeyHelper
-import roar.hbase.services.{IndexHelper, RegionCoprocessorEnvironmentSupport}
+import roar.hbase.services.RegionCoprocessorEnvironmentSupport
 import roar.protocol.generated.RoarProtos.IdSearchResponse
 import stark.utils.services.LoggerSupport
-
-import scala.collection.JavaConversions._
 
 /**
   * 对象搜索的
@@ -36,7 +35,8 @@ trait ObjectIdSearcherSupport {
   def searchObjectId(q: String,field:String,maxSeq:Int=0): Option[IdSearchResponse]= {
     doInSearcher { search =>
 
-      var idMaxSeq = maxSeq
+      val idMaxSeq = maxSeq
+      /*
       if(maxSeq ==0) {
         val columnOpt = queryResource.properties.find(_.name == field)
         val column = columnOpt.getOrElse(throw new RuntimeException("column definition not found by " + field))
@@ -44,12 +44,14 @@ trait ObjectIdSearcherSupport {
           throw new RuntimeException("object category is null for "+field)
         idMaxSeq = IndexHelper.findCurrentSeq(region, column.objectCategory)
       }
+      */
+      val objectIdField = RoarApiConstants.OBJECT_ID_FIELD_FORMAT.format(field)
 
       val parser = createParser()
       val query = parser.parse(q)
       logger.info("object id query :{} ....", q)
       val start = System.currentTimeMillis()
-      val originCollector = new IdSearchCollector(search,field,idMaxSeq)
+      val originCollector = new IdSearchCollector(search,objectIdField,idMaxSeq)
       try {
         /*
         var collector:Collector = new TimeOutCollector(originCollector)

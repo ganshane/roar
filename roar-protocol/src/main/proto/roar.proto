@@ -39,9 +39,10 @@ message GroupCountSearchResponse{
   message GroupCount {
     required bytes name = 1;
     required int32 count = 2;
-    required int32 total = 3;
   }
   repeated GroupCount result = 1;
+  required bool partial_group = 2; //是否只处理了部分group
+  required int32 total_doc = 3; //总共处理的文档数
 }
 
 service IndexSearchService{
