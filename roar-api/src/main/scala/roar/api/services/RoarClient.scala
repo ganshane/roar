@@ -153,7 +153,7 @@ class RoarClient(conf:Configuration) {
       result
     }
   }
-  def groupSearch(tableName:String,q:String,groupField:String,topN: Int):Array[GroupCountSearchResponse] ={
+  def groupSearch(tableName:String,q:String,groupField:String,maxGroup:Int,topN: Int):Array[GroupCountSearchResponse] ={
     internalGroupSearch((table,searchRequest)=>{
       val list = new CopyOnWriteArrayList[GroupCountSearchResponse]()
       table.coprocessorService(classOf[IndexSearchService], null, null,
@@ -177,9 +177,9 @@ class RoarClient(conf:Configuration) {
           }
         })
       list.toArray(new Array[GroupCountSearchResponse](list.size()))
-    },tableName,groupField,q,topN)
+    },tableName,groupField,q,maxGroup,topN)
   }
-  def idSearchOnRS(tableName:String, q:String,groupField:String,topN: Int):Array[GroupCountSearchResponse]={
+  def idSearchOnRS(tableName:String, q:String,groupField:String,maxGroup:Int,topN: Int):Array[GroupCountSearchResponse]={
     internalGroupSearch((table,searchRequest)=>{
       val list = new CopyOnWriteArrayList[GroupCountSearchResponse]()
       val response = GroupCountSearchResponse.getDefaultInstance
@@ -191,17 +191,19 @@ class RoarClient(conf:Configuration) {
           }
         })
       list.toArray(new Array[GroupCountSearchResponse](list.size()))
-    },tableName,groupField,q,topN)
+    },tableName,groupField,q,maxGroup,topN)
   }
   private def internalGroupSearch(fun:(HTableInterface,GroupCountSearchRequest)=>Array[GroupCountSearchResponse],
                                   tableName:String,
                                   groupField:String,
                                   q: String,
+                                  maxGroup:Int,
                                   topN:Int):Array[GroupCountSearchResponse] ={
     doInTable(tableName) { table =>
       val searchRequestBuilder = GroupCountSearchRequest.newBuilder()
       searchRequestBuilder.setQ(q)
       searchRequestBuilder.setGroupField(groupField)
+      searchRequestBuilder.setMaxGroup(maxGroup)
       searchRequestBuilder.setTopN(topN)
 
       val searchRequest = searchRequestBuilder.build()
