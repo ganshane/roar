@@ -68,8 +68,8 @@ trait RegionIndexSupport {
 
         val config = new IndexWriterConfig(RoarHbaseConstants.defaultAnalyzer)
         config.setUseCompoundFile(false)
-//        config.setRAMBufferSizeMB(128)
-        config.setMaxBufferedDocs(50000)
+        config.setRAMBufferSizeMB(128)
+//        config.setMaxBufferedDocs(50000)
 
 //        val mergePolicy = new TieredMergePolicy//new LogByteSizeMergePolicy()
       val mergePolicy = new LogByteSizeMergePolicy()
