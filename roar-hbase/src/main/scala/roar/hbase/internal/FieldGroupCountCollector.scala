@@ -17,21 +17,23 @@ import org.apache.lucene.util.{BytesRef, SentinelIntSet}
   */
 class FieldGroupCountCollector(field:String,groupNames:util.Collection[BytesRef]) extends SimpleCollector{
   private val orderSet = new SentinelIntSet(groupNames.size(),-2)
-  private val groupMap = initGroupCountObject();
+  private val groups = initGroupCountObject()
   private val groupCounts = new Array[GroupCount](orderSet.keys.length)
   private var index: SortedDocValues = _
 
   private var ord:Int = _
   private[internal] var totalHits = 0
-  private def initGroupCountObject():Map[BytesRef,GroupCount]={
+  private def initGroupCountObject():Array[GroupCount]={
+    val groups = new Array[GroupCount](groupNames.size())
     val it = groupNames.iterator()
-    var map = Map[BytesRef,GroupCount]()
+    var i = 0
     while(it.hasNext){
       val name = it.next()
-      map = map + (name->GroupCount(name))
+      groups(i) = GroupCount(name)
+      i += 1
     }
 
-    map
+    groups
   }
   override def collect(doc: Int): Unit = {
     totalHits += 1
@@ -45,11 +47,11 @@ class FieldGroupCountCollector(field:String,groupNames:util.Collection[BytesRef]
 
   override def doSetNextReader(context: LeafReaderContext): Unit = {
     index = DocValues.getSorted(context.reader(),field)
-    val it = groupNames.iterator()
-    while(it.hasNext){
-      val name = it.next()
-      val ord = index.lookupTerm(name)
-      groupCounts(orderSet.put(ord)) = groupMap.get(name).get
+    groups.foreach{g=>
+      val name = g.name
+      val groupOrd: Int = if (name == null) -1 else index.lookupTerm(name)
+      if(groupOrd >= 0)
+        groupCounts(orderSet.put(groupOrd)) = g
     }
   }
   override def needsScores(): Boolean = false
@@ -67,20 +69,11 @@ class FieldGroupCountCollector(field:String,groupNames:util.Collection[BytesRef]
 
     Range(0,pq.size()).map(i=>pq.pop()).toArray
     */
-    val groupCountColl = new Array[GroupCount](groupMap.size)
-
-    val it = groupMap.values.iterator
-    var i = 0
-    while(it.hasNext){
-      groupCountColl(i)=it.next()
-      i+=1
-    }
-
-    groupCountColl
+    groups
   }
 }
 
-case class GroupCount(bytesRef: BytesRef){
+case class GroupCount(name: BytesRef){
   var count=0
 }
 

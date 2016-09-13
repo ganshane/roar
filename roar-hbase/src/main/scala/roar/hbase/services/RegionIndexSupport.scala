@@ -67,10 +67,13 @@ trait RegionIndexSupport {
          //new HdfsDirectory(indexPath, HdfsLockFactoryInHbase, coprocessorEnv.getConfiguration)
 
         val config = new IndexWriterConfig(RoarHbaseConstants.defaultAnalyzer)
-        config.setRAMBufferSizeMB(128)
-//        config.setMaxBufferedDocs(10000)
+        config.setUseCompoundFile(false)
+//        config.setRAMBufferSizeMB(128)
+        config.setMaxBufferedDocs(50000)
 
-        val mergePolicy = new TieredMergePolicy//new LogByteSizeMergePolicy()
+//        val mergePolicy = new TieredMergePolicy//new LogByteSizeMergePolicy()
+      val mergePolicy = new LogByteSizeMergePolicy()
+        mergePolicy.setMinMergeMB(10 * 1024 * 1024)
 //        mergePolicy.setMaxMergeAtOnce(10)
 //        mergePolicy.setSegmentsPerTier(10)
         // compound files cannot be used with HDFS

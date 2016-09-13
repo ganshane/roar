@@ -42,9 +42,9 @@ message GroupCountSearchResponse{
     required int32 count = 2;
   }
   repeated GroupCount result = 1;
-  required bool partial_group = 2; //是否只处理了部分group
-  required int32 hit_doc = 3; //总共处理的文档数
-  required int32 total_doc = 4; //总共处理的文档数
+  optional bool partial_group = 2; //是否只处理了部分group
+  optional int32 hit_doc = 3; //总共处理的文档数
+  optional int32 total_doc = 4; //总共处理的文档数
 }
 
 service IndexSearchService{

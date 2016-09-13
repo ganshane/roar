@@ -101,7 +101,7 @@ class DocumentCreatorImplTest {
     freqResultOpt.foreach{data=>
       val r = data._1
       Assert.assertEquals(1,r.size)
-      val traceType = r(0).bytesRef.utf8ToString()
+      val traceType = r(0).name.utf8ToString()
       Assert.assertEquals("321",traceType)
       Assert.assertEquals(2,r(0).count)
     }

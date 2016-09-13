@@ -80,7 +80,7 @@ trait IndexSearchServiceSupport extends CoprocessorService {
             val builder = GroupCountSearchResponse.newBuilder()
             data._1.foreach{g=>
               val rb = builder.addResultBuilder()
-              rb.setName(ByteString.copyFromUtf8(g.bytesRef.utf8ToString()))
+              rb.setName(ByteString.copyFromUtf8(g.name.utf8ToString()))
               rb.setCount(g.count)
             }
             builder.setPartialGroup(data._2)
