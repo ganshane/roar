@@ -88,9 +88,9 @@ class TermAllGroupsCollector(groupField: String, initialSize: Int=128) extends A
   override def collect (doc: Int) {
     val key: Int = index.getOrd (doc)
     if (! ordSet.exists (key) ) {
-      if(groups.size() > initialSize){
+      if(groups.size() >= initialSize){
         isPartial = true
-        return
+        throw new IllegalStateException()
       }
       ordSet.put (key)
       var term: BytesRef = null

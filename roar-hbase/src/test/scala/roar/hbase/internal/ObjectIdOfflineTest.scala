@@ -17,11 +17,12 @@ object ObjectIdOfflineTest {
   private val sfzhPattern="([\\d]{6})([\\d]{4})([\\d]{2})([\\d]{2})([\\d]{3})([\\dXx])".r
   def main(args:Array[String]): Unit = {
     val data = mutable.Map[String, RoaringBitmap]()
-    val stream = Source.fromFile(new File("/Users/jcai/Downloads/sfzh.txt"))
+    val stream = Source.fromFile(new File("/Users/jcai/Downloads/sfzh-1.txt"))
     val calendar = Calendar.getInstance()
     calendar.setTimeInMillis(0)
     val maxTime = 1 << 16
     val minTime = (1970 - 1900) * 365
+    var line = 0
     stream.getLines()
 //        .take(5)
       .foreach {
@@ -44,6 +45,7 @@ object ObjectIdOfflineTest {
         }
 //        println(days,seq,days.toBinaryString)
 
+        line += 1
         data.get(district) match {
           case Some(bitmap) =>
             bitmap.add(days)
@@ -58,7 +60,7 @@ object ObjectIdOfflineTest {
     //371102198510147846
     val bytes = data.values.map(_.getSizeInBytes).sum
     val maxBytes = data.values.map(_.getSizeInBytes).max
-    println(data.size,bytes,maxBytes)
+    println(data.size,bytes,maxBytes,"line:",line)
 
 
     /*
@@ -73,9 +75,11 @@ object ObjectIdOfflineTest {
     */
 
     val start = System.currentTimeMillis()
+    var trueInt = 0
+    var falseInt = 0
     val stream2 = Source.fromFile(new File("/Users/jcai/Downloads/sfzh.txt"))
     stream2.getLines()
-              .take(1000000)
+//              .take(1000000)
       .foreach {
       case sfzhPattern(district, y, m, d, seq, _) =>
         calendar.set(Calendar.YEAR, y.toInt)
@@ -98,13 +102,15 @@ object ObjectIdOfflineTest {
 
         data.get(district) match {
           case Some(bitmap) =>
-            bitmap.contains(days)
+            if(bitmap.contains(days)) trueInt += 1
+            else falseInt += 1
           case None =>
+            falseInt += 1
         }
       case other=>
         println("invalid sfzh "+other)
     }
-    println(System.currentTimeMillis() - start)
+    println(System.currentTimeMillis() - start,trueInt,falseInt)
 
   }
 }

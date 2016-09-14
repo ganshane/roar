@@ -29,9 +29,12 @@ trait GroupCountSearcherSupport {
       val start = System.currentTimeMillis()
 
 
-      //TODO max groups
-      val groupsCollector = new TermAllGroupsCollector(field,maxGroup)
-      search.search(query, groupsCollector)
+      val groupsCollector = new TermAllGroupsCollector(field, maxGroup)
+      try {
+        search.search(query, groupsCollector)
+      }catch{
+        case e:IllegalStateException =>
+      }
       val groups = groupsCollector.getGroups()
       val fieldCountCollector = new FieldGroupCountCollector(field,groups)
       search.search(query, fieldCountCollector)

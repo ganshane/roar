@@ -38,6 +38,7 @@ class DocumentCreatorImplTest {
     createCell(result,"start_time",1234)
     createCell(result,"end_time",1237)
     createCell(result,"trace_type","test")
+    createCell(result,"geo","321")
 
 
     searcher.index(1L,result.getRow,(bb,cate)=>1)
@@ -93,16 +94,16 @@ class DocumentCreatorImplTest {
       val idBitSet = new RoaringBitmap()
 
       idBitSet.deserialize(new DataInputStream(idResult.getData.newInput()))
-      Assert.assertEquals(1,idBitSet.getCardinality())
+      Assert.assertEquals(2,idBitSet.getCardinality())
       Assert.assertTrue(idBitSet.contains(2))
     }
 
-    val freqResultOpt = searcher.searchFreq("321","object_id",10)
+    val freqResultOpt = searcher.searchFreq("321","object_id",1)
     freqResultOpt.foreach{data=>
       val r = data._1
       Assert.assertEquals(1,r.size)
       val traceType = r(0).name.utf8ToString()
-      Assert.assertEquals("321",traceType)
+      Assert.assertEquals("123",traceType)
       Assert.assertEquals(2,r(0).count)
     }
   }
