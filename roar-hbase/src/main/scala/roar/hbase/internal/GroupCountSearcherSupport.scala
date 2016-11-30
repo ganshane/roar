@@ -36,6 +36,8 @@ trait GroupCountSearcherSupport {
         case e:IllegalStateException =>
       }
       val groups = groupsCollector.getGroups()
+      val time1 = System.currentTimeMillis() - start
+      logger.info("freq query step1 :{},size:{} time:" + time1, q, groups.size())
       val fieldCountCollector = new FieldGroupCountCollector(field,groups)
       search.search(query, fieldCountCollector)
       val result = fieldCountCollector.getTopGroups(topN)

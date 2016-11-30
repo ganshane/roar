@@ -1,7 +1,6 @@
 package roar.hbase.internal
 
-import java.io.File
-import java.util.Calendar
+import java.io._
 
 import org.roaringbitmap.RoaringBitmap
 
@@ -15,90 +14,92 @@ import scala.io.Source
   */
 object ObjectIdOfflineTest {
   private val sfzhPattern="([\\d]{6})([\\d]{4})([\\d]{2})([\\d]{2})([\\d]{3})([\\dXx])".r
+  private val y1900 = rdn(1900,1,1)
+
+  /**
+    * Convert your dates to integer denoting the number of days since an epoch, then subtract.
+    * using Rata Die, an explanation of the algorithm can be found at <http://mysite.verizon.net/aesir_research/date/rata.htm>.
+    *
+    * @param year
+    * @param month
+    * @param d
+    * @return
+    */
+  private def rdn(year:Int,month:Int,d:Int): Int ={
+    var y = year
+    var m = month
+    if (m < 3) {
+      y -= 1
+      m += 12
+    }
+    365*y + y/4 - y/100 + y/400 + (153*m - 457)/5 + d - 306
+  }
+  private def calIdSeq(year:Int,month:Int,d:Int,seq:Int):Int={
+    val days = rdn(year,month,d)
+    (days - y1900) | (seq.toInt << 16)
+    /*
+    val days = (year - 1900) * 366 + (month-1) * 31 + d
+    days | (seq << 16)
+    */
+  }
   def main(args:Array[String]): Unit = {
+    if(calIdSeq(2010,12,16,736) !=48275022){
+      throw new IllegalArgumentException
+    }
+
     val data = mutable.Map[String, RoaringBitmap]()
-    val stream = Source.fromFile(new File("/Users/jcai/Downloads/sfzh-1.txt"))
-    val calendar = Calendar.getInstance()
-    calendar.setTimeInMillis(0)
-    val maxTime = 1 << 16
-    val minTime = (1970 - 1900) * 365
+    val stream = Source.fromFile(new File("/Users/jcai/Downloads/sfzh.txt"))
+//    val minTime = (1970 - 1900) * 365
     var line = 0
+    val mask = (1 << 20) -1
     stream.getLines()
-//        .take(5)
-      .foreach {
+//        .take(100000000)
+      .foreach { l => l match {
       case sfzhPattern(district, y, m, d, seq, _) =>
-        calendar.set(Calendar.YEAR, y.toInt)
-        calendar.set(Calendar.MONTH, m.toInt)
-        calendar.set(Calendar.DAY_OF_MONTH, d.toInt)
-        var days = (calendar.getTimeInMillis / 1000 / 60 / 60 / 24).toInt + minTime
-        if (days > maxTime)
-          throw new IllegalStateException("time is bigger " + maxTime)
-
-//        println(y,m,d,days,days.toBinaryString)
-      /*{
-        days <<= 14
-        days |= seq.toInt
-      }
-      */
-        {
-          days |= (seq.toInt << 16)
-        }
-//        println(days,seq,days.toBinaryString)
-
+        val days = calIdSeq(y.toInt,m.toInt,d.toInt,seq.toInt)
+        //        println(days,seq,days.toBinaryString)
         line += 1
         data.get(district) match {
           case Some(bitmap) =>
+//            println(l,district,days)
             bitmap.add(days)
+            if((line & mask) == 0)
+              println(line)
           case None =>
             val bitmap = new RoaringBitmap()
             data.put(district, bitmap)
             bitmap.add(days)
         }
-      case other=>
-          println("invalid sfzh "+other)
+      case other =>
+        println("invalid sfzh " + other)
+    }
+    }
+
+
+    data.foreach{case (k,v)=>
+      val file = new File("/Users/jcai/workspace/tmp/monad-1/"+k)
+      val fos = new FileOutputStream(file)
+      if(v.runOptimize()){
+        println(k+"-> "+v.serializedSizeInBytes()+" "+v.getCardinality)
+      }
+//      fos.write(ByteBuffer.allocate(4).putInt(k.toInt).array())
+      v.serialize(new DataOutputStream(fos))
+      fos.close()
     }
     //371102198510147846
     val bytes = data.values.map(_.getSizeInBytes).sum
     val maxBytes = data.values.map(_.getSizeInBytes).max
     println(data.size,bytes,maxBytes,"line:",line)
 
-
-    /*
-    var i = 0
-    data.values.foreach{b=>
-      val file = new File("/tmp/monad/"+i)
-      val fos = new FileOutputStream(file)
-      b.serialize(new DataOutputStream(fos))
-      fos.close()
-      i += 1
-    }
-    */
-
     val start = System.currentTimeMillis()
     var trueInt = 0
     var falseInt = 0
-    val stream2 = Source.fromFile(new File("/Users/jcai/Downloads/sfzh.txt"))
+    val stream2 = Source.fromFile(new File("/Users/jcai/Downloads/sfzh-1.txt"))
     stream2.getLines()
-//              .take(1000000)
+              .take(100000000)
       .foreach {
       case sfzhPattern(district, y, m, d, seq, _) =>
-        calendar.set(Calendar.YEAR, y.toInt)
-        calendar.set(Calendar.MONTH, m.toInt)
-        calendar.set(Calendar.DAY_OF_MONTH, d.toInt)
-        var days = (calendar.getTimeInMillis / 1000 / 60 / 60 / 24).toInt + minTime
-        if (days > maxTime)
-          throw new IllegalStateException("time is bigger " + maxTime)
-
-        //        println(y,m,d,days,days.toBinaryString)
-        /*{
-          days <<= 14
-          days |= seq.toInt
-        }
-        */
-      {
-        days |= (seq.toInt << 16)
-      }
-        //        println(days,seq,days.toBinaryString)
+        val days = calIdSeq(y.toInt,m.toInt,d.toInt,seq.toInt)
 
         data.get(district) match {
           case Some(bitmap) =>
