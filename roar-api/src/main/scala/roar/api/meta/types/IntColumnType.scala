@@ -22,7 +22,7 @@ object IntColumnType extends IntColumnType
 class IntColumnType extends DataColumnType[Int] {
 
 
-  override protected def convertCellAsData(cell: Cell): Option[Int] = {
+  override protected def convertCellAsData(cell: Cell,cd:ResourceProperty): Option[Int] = {
     Some(ByteBuffer.wrap(cell.getValueArray,cell.getValueOffset,cell.getValueLength).getInt)
   }
 

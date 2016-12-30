@@ -22,7 +22,7 @@ object KeyColumnType extends KeyColumnType {
 class KeyColumnType extends DataColumnType[String]{
   private final val GBK="GBK"
 
-  override protected def convertCellAsData(cell: Cell): Option[String] =
+  override protected def convertCellAsData(cell: Cell,cd:ResourceProperty): Option[String] =
     Some(Bytes.toString(cell.getValueArray, cell.getValueOffset, cell.getValueLength))
 
 

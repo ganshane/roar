@@ -23,15 +23,15 @@ trait DataColumnType[T] {
     if(cell == null)
       None
     else
-      convertCellAsData(cell)
+      convertCellAsData(cell,cd)
   }
 
-  protected def convertCellAsData(cell: Cell): Option[T]
+  protected def convertCellAsData(cell: Cell,cd:ResourceProperty): Option[T]
 
   def readValueFromDfs(row: Put, cd: ResourceProperty): Option[T] = {
     val cellList = row.get(cd.family.getBytes,cd.name.getBytes)
     if(cellList.size()==0) None
-    else convertCellAsData(cellList.get(0))
+    else convertCellAsData(cellList.get(0),cd)
   }
   /**
     * 从分布式数据中读取数据用来供API显示

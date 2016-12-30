@@ -19,7 +19,7 @@ import roar.api.meta.ResourceDefinition.ResourceProperty
 object LongColumnType extends LongColumnType
 
 class LongColumnType extends DataColumnType[Long] {
-  override protected def convertCellAsData(cell: Cell): Option[Long] = {
+  override protected def convertCellAsData(cell: Cell,cd:ResourceProperty): Option[Long] = {
     Some(ByteBuffer.wrap(cell.getValueArray,cell.getValueOffset,cell.getValueLength).getLong)
   }
 
